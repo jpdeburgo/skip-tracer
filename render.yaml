@@ -1,0 +1,26 @@
+services:
+  - type: cron
+    name: skip-tracer
+    runtime: python
+    schedule: "0 13 * * 1"
+    buildCommand: pip install pipenv && pipenv install --deploy --ignore-pipfile
+    startCommand: PYTHONPATH=src pipenv run python -m skip_tracer.cli
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GMAIL_CREDENTIALS_PATH
+        value: /etc/secrets/credentials.json
+      - key: GMAIL_TOKEN_PATH
+        value: /etc/secrets/token.json
+      - key: DIGEST_EMAIL_TO
+        sync: false
+      - key: BATCHDATA_API_KEY
+        sync: false
+      - key: BATCHDATA_MAX_LEADS_PER_RUN
+        sync: false
+      - key: ST_GITHUB_TOKEN
+        sync: false
+      - key: ST_GITHUB_REPO
+        sync: false
+      - key: ST_GIT_BRANCH
+        value: main

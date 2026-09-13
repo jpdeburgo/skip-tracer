@@ -150,6 +150,9 @@ activemq-data/
 # Environments
 .env
 .envrc
+.DS_Store
+credentials.json
+token.json
 .venv
 env/
 venv/
