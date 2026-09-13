@@ -1,0 +1,16 @@
+[tool.semantic_release]
+version_variables = ["src/skip_tracer/__init__.py:__version__"]
+commit_parser = "conventional"
+# GitHub's squash-merge commit body lists each squashed commit as its own
+# "* message" line — parse those individually instead of only the PR-title
+# summary line, so a PR that mixes commit types (e.g. "feat: ..." plus
+# "chore: ...") still gets classified correctly.
+commit_parser_options = { parse_squash_commits = true, ignore_merge_commits = true }
+build_command = ""
+# Stay in the 0.x range (no forced jump straight to 1.0.0 on the first
+# release) until a feat!/BREAKING CHANGE commit or a manually forced
+# `--major` release says otherwise — this is still a POC.
+allow_zero_version = true
+
+[tool.semantic_release.branches.main]
+match = "main"

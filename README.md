@@ -175,6 +175,28 @@ Render dashboard before the first run:
 6. **`state.load_seen_parcels()` / `save_seen_parcels()`** — dedupe key is
    MD iMap's `ACCTID`.
 
+## Releases
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) runs
+[python-semantic-release](https://python-semantic-release.readthedocs.io/)
+on every push to `main` (a direct commit or a merged PR both land as one
+push event). It reads [Conventional Commits](https://www.conventionalcommits.org/)
+— `feat:` -> minor bump, `fix:` -> patch bump, `BREAKING CHANGE:` (or
+`feat!:`/`fix!:`) -> major bump, `chore:`/`docs:`/`refactor:`/etc. -> no
+release — bumps `__version__` in
+[`src/skip_tracer/__init__.py`](src/skip_tracer/__init__.py), updates
+`CHANGELOG.md`, and creates the git tag + GitHub Release. Config lives in
+[`pyproject.toml`](pyproject.toml); versions stay in the `0.x` range
+(`allow_zero_version = true`) until a breaking-change commit or a manually
+forced major release says otherwise.
+
+**If you squash-merge PRs** (GitHub's default), the parser also reads each
+individual commit line GitHub lists in the squash commit's body
+(`commit_parser_options.parse_squash_commits`), not just the PR-title
+summary line — but the PR title itself should still be a valid Conventional
+Commit type/description, since that's what becomes the squash commit's
+subject line.
+
 ## Known limitations (v1 POC)
 
 - **No repair-cost source.** `batchdata_client.max_allowable_offer()` exists

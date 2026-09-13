@@ -1,0 +1,37 @@
+name: Release
+
+# Both a direct commit to main and a merged PR land as a single push event
+# here — no separate PR-merge trigger needed. A push made by this workflow's
+# own GITHUB_TOKEN doesn't re-trigger this workflow (GitHub suppresses that
+# to avoid infinite loops), so no extra guard is needed against the release
+# commit re-running this job.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      # Determines the next semver version from Conventional Commits
+      # (feat -> minor, fix -> patch, "BREAKING CHANGE"/"!" -> major, chore/
+      # docs/refactor/etc. -> no release) since the last tag, bumps
+      # src/skip_tracer/__init__.py's __version__ (see pyproject.toml),
+      # updates CHANGELOG.md, and creates the git tag + GitHub Release.
+      - name: Python Semantic Release
+        uses: python-semantic-release/python-semantic-release@v10
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
