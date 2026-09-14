@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.1.0 (2026-09-14)
+
+### Features
+
+- Add current value, repair cost estimate, and ARV to the digest
+  ([`66d654a`](https://github.com/jpdeburgo/skip-tracer/commit/66d654ab1c51269841b10a06913c0a4df7934db5))
+
+
 ## v0.0.2 (2026-09-14)
 
 ### Bug Fixes
