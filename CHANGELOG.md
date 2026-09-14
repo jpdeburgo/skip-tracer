@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v0.4.0 (2026-09-14)
+
+### Chores
+
+- Clear seen-parcel state
+  ([`a3950c9`](https://github.com/jpdeburgo/skip-tracer/commit/a3950c9950d4413ae8a237772fbde6a7fa3c8a97))
+
+### Features
+
+- Add local-only full-lead archive
+  ([`31414ff`](https://github.com/jpdeburgo/skip-tracer/commit/31414ff72292d9065d0c56f63dbc57b7619cd195))
+
+
 ## v0.3.0 (2026-09-14)
 
 ### Features
