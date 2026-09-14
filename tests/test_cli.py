@@ -1,5 +1,44 @@
 import skip_tracer.cli as cli
 
+# Trimmed to the fields cli.py reads, from a real call against 11132
+# Willowbrook Dr, Potomac, MD 20854 (see batchdata_client.py's module
+# docstring) — locks in the verified response shape as a regression test.
+REAL_SKIP_TRACE_RESPONSE = {
+    "results": {
+        "persons": [
+            {
+                "name": {"full": "Gunay H Evinch"},
+                "phoneNumbers": [{"number": "3013092221", "dnc": True}],
+                "dnc": {"tcpa": False},
+                "property": {"owner": {"name": {"full": "Atalay Evinch"}}},
+            }
+        ]
+    }
+}
+
+REAL_VALUATION_RESPONSE = {
+    "results": {
+        "properties": [
+            {
+                "valuation": {"estimatedValue": 1512714},
+                "owner": {"fullName": "Atalay Evinch; Gunay Evinch"},
+                "permit": {
+                    "permitCount": 2,
+                    "latestDate": "2010-07-28T00:00:00.000Z",
+                },
+            }
+        ]
+    }
+}
+
+
+class _FakeBatchDataClient:
+    def skip_trace(self, address):
+        return REAL_SKIP_TRACE_RESPONSE
+
+    def lookup_valuation(self, address):
+        return REAL_VALUATION_RESPONSE
+
 
 def _record(acctid, owner_addr, prop_addr="200 Main St", **extra):
     return {
@@ -52,6 +91,45 @@ def test_enrich_lead_without_batchdata_client_still_builds_zillow_link():
     assert "Rockville" in lead.zillow_link
     assert lead.owner_name == "unknown"
     assert lead.condition_tier == "unassessed"
+
+
+def test_enrich_lead_parses_real_batchdata_response_shapes():
+    record = _record(
+        "161002618365",
+        "11208 Spur Wheel Ln",
+        ADDRESS="11132 Willowbrook Dr",
+        PREMCITY="Potomac",
+        PREMZIP="20854",
+        NFMTTLVL=1_481_200,
+    )
+
+    lead = cli.enrich_lead(record, batchdata=_FakeBatchDataClient())
+
+    # The deed owner from valuation's owner.fullName wins over skip-trace's
+    # property.owner.name.full (both real, valuation's is more complete).
+    assert lead.owner_name == "Atalay Evinch; Gunay Evinch"
+    assert lead.phone == "3013092221"
+    assert lead.do_not_call is True
+    assert lead.tcpa_risk is False
+    assert lead.arv_estimate == 1512714
+    assert lead.low_margin is False  # assessed 1,481,200 < ARV 1,512,714
+    assert lead.condition_tier == "unassessed"  # STRUGRAD absent from this record
+
+
+def test_enrich_lead_skip_trace_owner_used_when_valuation_has_no_properties():
+    record = _record("1", "100 Other St", ADDRESS="200 Main St")
+
+    class _NoValuationClient:
+        def skip_trace(self, address):
+            return REAL_SKIP_TRACE_RESPONSE
+
+        def lookup_valuation(self, address):
+            return {"results": {"properties": []}}
+
+    lead = cli.enrich_lead(record, batchdata=_NoValuationClient())
+
+    assert lead.owner_name == "Atalay Evinch"  # skip-trace's property.owner fallback
+    assert lead.arv_estimate is None
 
 
 def test_build_digest_body_includes_low_margin_and_dnc_flags():

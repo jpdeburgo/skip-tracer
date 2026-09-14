@@ -4,10 +4,10 @@ Each stage is independently testable, matching the nw-deal-screener CLI
 pattern: gather_new_leads() -> enrich_lead() -> build_digest_body() ->
 send_weekly_digest().
 
-Skip-trace/valuation response parsing in enrich_lead() is UNVERIFIED (see
-batchdata_client.py and the Test-First Checklist in README.md) and is
-wrapped defensively — a failed or unexpected-shaped BatchData call degrades
-that one lead's enrichment instead of failing the whole run.
+Skip-trace/valuation response parsing in enrich_lead() is verified against
+a real lead (see batchdata_client.py's module docstring) but still wrapped
+defensively — a failed or unexpected-shaped BatchData call degrades that
+one lead's enrichment instead of failing the whole run.
 """
 
 from __future__ import annotations
@@ -19,12 +19,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from .batchdata_client import (
-    BatchDataClient,
-    PropertyAddress,
-    estimate_arv_from_comps,
-    flag_low_margin,
-)
+from .batchdata_client import BatchDataClient, PropertyAddress, flag_low_margin
 from .condition import condition_tier
 from .filtering import classify_owner_entity, contactability_tier, is_genuinely_absentee
 from .gmail_client import get_gmail_service, send_email
@@ -52,6 +47,7 @@ class Lead:
     owner_name: str = "unknown"
     phone: str | None = None
     do_not_call: bool | None = None
+    tcpa_risk: bool | None = None
     motivation_signal: str = "Absentee owner"
     contactability_tier: str = "direct"
     entity_type: str = "individual"
@@ -94,10 +90,25 @@ def gather_new_leads(
     return new_records
 
 
+def _year_from_iso_date(value: str | None) -> int | None:
+    try:
+        return int(value[:4])
+    except (TypeError, ValueError):
+        return None
+
+
 def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Lead:
-    """Adds skip-trace contact info, valuation, permits, and a condition
-    tier to an already-filtered MD iMap record. Degrades gracefully when
-    BatchData is unavailable or a call fails."""
+    """Adds skip-trace contact info, valuation, and a condition tier to an
+    already-filtered MD iMap record. Degrades gracefully when BatchData is
+    unavailable or a call fails.
+
+    Two billable calls per lead (skip-trace + valuation), not five: the
+    valuation lookup's embedded permit summary covers condition_tier()'s
+    needs, and skip-trace's embedded per-phone "dnc" flag and person-level
+    TCPA flag cover this digest's compliance signal — see
+    batchdata_client.py's module docstring for why the other three
+    endpoints aren't called here.
+    """
     lead = Lead(
         acctid=record["ACCTID"],
         address=record.get("ADDRESS", ""),
@@ -124,41 +135,41 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
         try:
             skip_trace_result = batchdata.skip_trace(address)
             person = (skip_trace_result.get("results") or {}).get("persons", [{}])[0]
-            lead.owner_name = person.get("name", {}).get("full", lead.owner_name)
             phones = person.get("phoneNumbers", [])
             if phones:
                 lead.phone = phones[0].get("number")
+                lead.do_not_call = phones[0].get("dnc")
+            lead.tcpa_risk = person.get("dnc", {}).get("tcpa")
+            # The deed owner, not necessarily the person tied to the phone
+            # number above (that's whoever's reachable at the owner's
+            # mailing address, per BatchData) — see batchdata_client.py's
+            # module docstring.
+            deed_owner_name = (
+                person.get("property", {}).get("owner", {}).get("name", {}).get("full")
+            )
+            if deed_owner_name:
+                lead.owner_name = deed_owner_name
         except Exception as error:  # noqa: BLE001 - degrade, don't fail the run
             print(f"skip-trace failed for {lead.acctid}: {error}")
 
-        if lead.phone:
-            try:
-                dnc_result = batchdata.check_dnc(lead.phone)
-                lead.do_not_call = bool(
-                    (dnc_result.get("results") or {}).get("dnc")
-                )
-            except Exception as error:  # noqa: BLE001
-                print(f"DNC check failed for {lead.acctid}: {error}")
-
         try:
             valuation_result = batchdata.lookup_valuation(address)
-            results = valuation_result.get("results") or {}
-            if "arv" in results:
-                lead.arv_estimate = results["arv"]
-            elif "comps" in results and record.get("SQFTSTRC"):
-                lead.arv_estimate = estimate_arv_from_comps(
-                    results["comps"], record["SQFTSTRC"]
-                )
+            properties = (valuation_result.get("results") or {}).get("properties", [])
+            if properties:
+                prop = properties[0]
+                lead.arv_estimate = prop.get("valuation", {}).get("estimatedValue")
+                owner_full_name = prop.get("owner", {}).get("fullName")
+                if owner_full_name:
+                    lead.owner_name = owner_full_name
+                permit = prop.get("permit") or {}
+                latest_permit_year = _year_from_iso_date(permit.get("latestDate"))
+                if permit.get("permitCount") and latest_permit_year is not None:
+                    permit_history = [{"year": latest_permit_year}]
         except Exception as error:  # noqa: BLE001
             print(f"valuation lookup failed for {lead.acctid}: {error}")
 
         if lead.assessed_value is not None and lead.arv_estimate is not None:
             lead.low_margin = flag_low_margin(lead.assessed_value, lead.arv_estimate)
-
-        try:
-            permit_history = batchdata.get_property_permits(address)
-        except Exception as error:  # noqa: BLE001
-            print(f"permit lookup failed for {lead.acctid}: {error}")
 
     lead.condition_tier = condition_tier(record, permit_history)
     return lead
@@ -171,9 +182,10 @@ def build_digest_body(leads: list[Lead]) -> str:
         if lead.low_margin is True:
             margin_note = " | LOW MARGIN (assessed value >= ARV estimate)"
         dnc_note = " | DNC" if lead.do_not_call else ""
+        tcpa_note = " | TCPA RISK" if lead.tcpa_risk else ""
         body_lines.append(
             f"{lead.address}\n"
-            f"  Owner: {lead.owner_name} | Phone: {lead.phone or 'n/a'}{dnc_note} | "
+            f"  Owner: {lead.owner_name} | Phone: {lead.phone or 'n/a'}{dnc_note}{tcpa_note} | "
             f"Signal: {lead.motivation_signal} | Condition: {lead.condition_tier}"
             f"{margin_note}\n"
             f"  Zillow: {lead.zillow_link}\n"

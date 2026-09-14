@@ -4,18 +4,32 @@ Base URL: https://api.batchdata.com — the version prefix /api/v1/ is
 required and easy to miss; a condensed reference we worked from omitted it,
 causing a 404 on a route that otherwise looked correct.
 
-skip_trace() and lookup_valuation() are UNVERIFIED: the request/response
-shapes below are a best guess based on the `requests`/`options` pattern used
-elsewhere in BatchData's API. Run scripts/test_skip_trace.py and
-scripts/test_valuation.py against a real, already-known lead and adjust the
-field names here before trusting either in the pipeline (see the
-Test-First Checklist in README.md).
+skip_trace() and lookup_valuation() request/response shapes are VERIFIED
+against a real lead (11132 Willowbrook Dr, Potomac, MD 20854) via
+scripts/test_skip_trace.py and scripts/test_valuation.py:
+
+- lookup_valuation() returns a single AVM figure
+  (results.properties[0].valuation.estimatedValue), not raw comps, so no
+  comp-weighting helper is needed here.
+- It also returns owner name(s) (results.properties[0].owner.fullName) and
+  a rolled-up permit summary (results.properties[0].permit) for the same
+  call — cli.enrich_lead() uses these instead of separate calls to
+  get_property_permits() below, to avoid paying for data already returned.
+- skip_trace()'s top-level results.persons[0].name is a resident at the
+  owner's mailing address, not necessarily the deed owner — that's
+  results.persons[0].property.owner.name. Its phoneNumbers[] entries each
+  carry their own "dnc" boolean, and the person carries a "dnc": {"tcpa":
+  bool} litigation-risk flag — both are already included in this same
+  call, which is why cli.enrich_lead() doesn't call check_dnc()/
+  check_tcpa() below for the weekly digest (a human reviews it before any
+  outreach). Those two methods stay available here for a future workflow
+  that actually places calls/texts, per BatchData's own compliance
+  guidance to check every number immediately before outreach.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
 import requests
@@ -76,17 +90,18 @@ class BatchDataClient:
 
     def lookup_valuation(self, address: PropertyAddress) -> dict[str, Any]:
         """`dataset: "valuation"` is one of 14 documented dataset/projection
-        options alongside basic/core/foreclosure. Confirm whether the
-        response is a single AVM figure or raw comps — that determines
-        whether estimate_arv_from_comps() below is even needed."""
+        options alongside basic/core/foreclosure."""
         return self._post(
             "property/lookup/all-attributes",
             {"requests": [{"address": address.as_dict()}], "dataset": "valuation"},
         )
 
     def get_property_permits(self, address: PropertyAddress) -> list[dict[str, Any]]:
-        """Each property requested counts as one billable request
-        regardless of how many permits come back."""
+        """Not called by cli.enrich_lead() — lookup_valuation()'s embedded
+        permit summary covers condition_tier()'s needs at no extra cost.
+        Kept for a future need of the full per-permit list. Each property
+        requested counts as one billable request regardless of how many
+        permits come back."""
         result = self._post(
             "property/get-property-permits",
             {"requests": [{"address": address.as_dict()}]},
@@ -94,13 +109,19 @@ class BatchDataClient:
         return result.get("results", {}).get("permits", [])
 
     def check_dnc(self, phone: str) -> dict[str, Any]:
-        """Run on every phone number from skip-trace before it goes
-        anywhere near a calling/texting workflow."""
+        """Not called by cli.enrich_lead() — skip_trace()'s response
+        already includes a per-phone "dnc" flag, which is sufficient for a
+        digest a human reviews before calling. Run this immediately before
+        any actual call/text, per BatchData's compliance guidance, since
+        registry status can change after skip-trace runs."""
         return self._post("phone/dnc", {"phoneNumbers": [phone]})
 
     def check_tcpa(self, phone: str) -> dict[str, Any]:
-        """Run on every phone number from skip-trace before it goes
-        anywhere near a calling/texting workflow."""
+        """Not called by cli.enrich_lead() — skip_trace()'s response
+        already includes a person-level TCPA litigation-risk flag
+        (dnc.tcpa), which is sufficient for a digest a human reviews before
+        calling. Run this immediately before any actual call/text, per
+        BatchData's compliance guidance."""
         return self._post("phone/tcpa", {"phoneNumbers": [phone]})
 
 
@@ -120,26 +141,3 @@ def flag_low_margin(assessed_value: float, arv_estimate: float) -> bool:
     """If the county's own assessment already meets/exceeds ARV, there's
     no room for a flip."""
     return assessed_value >= arv_estimate
-
-
-def estimate_arv_from_comps(comps: list[dict[str, Any]], subject_sqft: float) -> float:
-    """Recency-weighted average $/sqft across comps, applied to the subject's
-    square footage. Only needed if the valuation dataset returns raw comps
-    rather than a single AVM figure — skip this and use that figure
-    directly if it doesn't.
-
-    comps: list of {"price": float, "sqft": float, "sale_date": str}
-    """
-    weighted_price_per_sqft = []
-    for comp in comps:
-        price_per_sqft = comp["price"] / comp["sqft"]
-        days_old = (datetime.now() - datetime.fromisoformat(comp["sale_date"])).days
-        weight = max(1, 365 - days_old) / 365
-        weighted_price_per_sqft.append((price_per_sqft, weight))
-
-    total_weight = sum(weight for _, weight in weighted_price_per_sqft)
-    avg_price_per_sqft = (
-        sum(price * weight for price, weight in weighted_price_per_sqft)
-        / total_weight
-    )
-    return avg_price_per_sqft * subject_sqft

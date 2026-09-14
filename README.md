@@ -73,33 +73,25 @@ BatchData's skip-trace/valuation/permits calls are what's expensive
 `BATCHDATA_MAX_LEADS_PER_RUN` (default `25`) caps how many *new* leads get
 BatchData enrichment per run; the rest are left unseen and picked up on a
 future run rather than being enriched or dropped. Filtering (Modules 1-2) is
-free and runs over every candidate regardless of this cap. Raise it only
-once you've confirmed BatchData's actual cost per skip-trace/valuation/permit
-call against your budget.
+free and runs over every candidate regardless of this cap. `enrich_lead()`
+makes 2 billable BatchData calls per lead (skip-trace + valuation), not 5 —
+see "Pipeline logic" below for why permits/DNC/TCPA don't need their own
+calls. Raise the cap only once you've confirmed that per-lead cost against
+your budget.
 
 ## Test-First Checklist
 
-Everything above marked UNVERIFIED in code comments (BatchData skip-trace
-and valuation response shapes, the zpid-free Zillow slug) was inferred from
-documentation patterns, not confirmed with a live call. Do these before
-trusting the corresponding module in a real run:
-
-- [ ] `PYTHONPATH=src pipenv run python scripts/test_skip_trace.py "<street>" <city> MD <zip>`
-      against a real, already-known lead. Confirm the actual response field
-      names and adjust `batchdata_client.py`'s `skip_trace()`/`cli.py`'s
-      `enrich_lead()` parsing if they differ from the current best guess.
-- [ ] `PYTHONPATH=src pipenv run python scripts/test_valuation.py "<street>" <city> MD <zip>`
-      — confirm whether the `valuation` dataset returns a single AVM figure
-      or raw comps. If comps, `estimate_arv_from_comps()` is needed and
-      already wired into `enrich_lead()`; if a single figure, simplify that
-      code path to use it directly.
-- [ ] `PYTHONPATH=src pipenv run python scripts/verify_zillow_slug.py` — open
-      the printed zpid-free search URL in a browser and confirm it resolves
-      to the same listing as the known-good canonical URL it prints
-      alongside it.
-- [ ] Fund BatchData's $50 wallet minimum.
-- [ ] Confirm Gmail OAuth credentials/refresh token still valid (see above),
-      or run the consent flow fresh.
+- [x] **Skip-trace and valuation response shapes** — verified live against
+      a real lead (11132 Willowbrook Dr, Potomac, MD 20854) with
+      `scripts/test_skip_trace.py` / `scripts/test_valuation.py`.
+      `batchdata_client.py`'s parsing (in `cli.enrich_lead()`) matches the
+      real shape; `estimate_arv_from_comps()` was removed — valuation
+      returns a single AVM figure
+      (`results.properties[0].valuation.estimatedValue`), not comps.
+- [x] **Zpid-free Zillow slug** — verified: the search URL redirects
+      straight to the correct listing (title/address/Zestimate all match).
+- [x] Fund BatchData's $50 wallet minimum.
+- [x] Confirm Gmail OAuth credentials/refresh token still valid.
 - [ ] Pull ~25 records from a couple of counties beyond Montgomery/PG and
       manually audit for false positives — the absentee filter was tuned
       against Montgomery + Prince George's specifically and hasn't been
@@ -163,13 +155,19 @@ Render dashboard before the first run:
    call) flags corporate/institutional ownership; a small diplomatic
    keyword list (`EMBASSY`, `EMBSY`, `CONSULATE`) catches what `EXCLASS`
    misses, and diplomatic-owned records are dropped entirely.
-4. **`cli.enrich_lead(record, batchdata)`** — skip-trace for
-   owner name/phone, DNC check on any phone found, valuation lookup for an
-   ARV estimate, `flag_low_margin()` against the county's own assessed
-   value, permits for `condition.condition_tier()`, and a Zillow search
-   link (built from `PREMCITY`, not `CITY` — MD iMap's two city fields can
-   disagree; see `zillow.py`'s docstring for the confirmed real example).
-   Degrades per-lead on any BatchData failure rather than failing the run.
+4. **`cli.enrich_lead(record, batchdata)`** — 2 BatchData calls per lead:
+   `skip_trace()` for phone + its embedded per-phone DNC flag + person-level
+   TCPA flag (the owner name comes from `property.owner.name`, not the
+   top-level person, who's just whoever's reachable at the owner's mailing
+   address), and `lookup_valuation()` for the ARV estimate, a fuller owner
+   name, and an embedded permit summary that feeds
+   `condition.condition_tier()` — no separate permits/DNC/TCPA calls needed
+   (`batchdata_client.py`'s module docstring has the full reasoning). Also
+   computes `flag_low_margin()` against the county's own assessed value and
+   builds a Zillow search link (from `PREMCITY`, not `CITY` — MD iMap's two
+   city fields can disagree; see `zillow.py`'s docstring for the confirmed
+   real example). Degrades per-lead on any BatchData failure rather than
+   failing the run.
 5. **`cli.build_digest_body()` / `send_weekly_digest()`** — one digest
    email per run listing every newly-enriched lead.
 6. **`state.load_seen_parcels()` / `save_seen_parcels()`** — dedupe key is
