@@ -56,7 +56,9 @@ def _get_ner_pipeline():
     for callers (like most tests) that never classify an owner entity."""
     from transformers import pipeline
 
-    return pipeline("ner", model=NER_MODEL_NAME, grouped_entities=True)
+    # transformers >=5 renamed grouped_entities=True to aggregation_strategy;
+    # output still keys grouped spans as "entity_group" either way.
+    return pipeline("ner", model=NER_MODEL_NAME, aggregation_strategy="simple")
 
 
 def classify_owner_entity(record: dict) -> str:

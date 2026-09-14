@@ -74,6 +74,25 @@ def test_gather_new_leads_filters_seen_absentee_and_diplomatic(monkeypatch):
     assert new_records[0]["contactability_tier"] == "direct"
 
 
+def test_gather_new_leads_stops_scanning_once_limit_reached(monkeypatch):
+    classify_calls = []
+
+    def fake_classify(record):
+        classify_calls.append(record["ACCTID"])
+        return "individual"
+
+    records = [_record(str(i), "100 Other St") for i in range(10)]
+    monkeypatch.setattr(cli, "fetch_jurisdiction_leads", lambda jurs: records)
+    monkeypatch.setattr(cli, "classify_owner_entity", fake_classify)
+
+    new_records = cli.gather_new_leads(seen=set(), jurisdictions=["MONT"], limit=2)
+
+    assert [r["ACCTID"] for r in new_records] == ["0", "1"]
+    # classify_owner_entity (the expensive NER call) must not run on the
+    # remaining 8 records once the limit is already satisfied.
+    assert classify_calls == ["0", "1"]
+
+
 def test_motivation_signal_flags_non_sale_transfer():
     record = {"CONVEY1": 4, "CONSIDR1": None}
     assert cli._motivation_signal(record) == "Non-sale transfer (possible inheritance)"

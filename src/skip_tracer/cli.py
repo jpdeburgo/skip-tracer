@@ -68,12 +68,25 @@ def _motivation_signal(record: dict[str, Any]) -> str:
 
 
 def gather_new_leads(
-    seen: set[str], jurisdictions: list[str] | None = None
+    seen: set[str], jurisdictions: list[str] | None = None, limit: int | None = None
 ) -> list[dict[str, Any]]:
-    """Fetch, dedupe, and filter candidate records — no BatchData calls yet."""
+    """Fetch, dedupe, and filter candidate records — no BatchData calls yet.
+
+    Stops as soon as `limit` qualifying candidates are found. A single
+    county can return tens of thousands of genuinely-absentee records
+    (confirmed live: ~38k for Montgomery alone), and classify_owner_entity()
+    costs ~10ms/record once its NER model is warm — scanning every record
+    in every jurisdiction before capping to what a run will actually enrich
+    would make gather_new_leads() the slow part of the pipeline for no
+    reason. Leads past the limit are simply left unseen and picked up
+    naturally on a future run, once already-enriched ACCTIDs are in `seen`.
+    """
     new_records = []
     for jurs_code in jurisdictions or PROCESSING_ORDER:
         for record in fetch_jurisdiction_leads(jurs_code):
+            if limit is not None and len(new_records) >= limit:
+                return new_records
+
             acctid = record.get("ACCTID")
             if not acctid or acctid in seen:
                 continue
@@ -214,25 +227,22 @@ def main() -> None:
     args = parser.parse_args()
 
     seen = load_seen_parcels()
-    candidates = gather_new_leads(seen, args.jurisdictions)
-    print(f"Found {len(candidates)} new candidate leads after filtering.")
-
     max_leads = int(
         os.environ.get("BATCHDATA_MAX_LEADS_PER_RUN", DEFAULT_MAX_LEADS_PER_RUN)
     )
-    to_enrich, deferred = candidates[:max_leads], candidates[max_leads:]
-    if deferred:
-        print(
-            f"Deferring BatchData enrichment for {len(deferred)} lead(s) to a "
-            f"future run (BATCHDATA_MAX_LEADS_PER_RUN={max_leads})."
-        )
+    candidates = gather_new_leads(seen, args.jurisdictions, limit=max_leads)
+    print(
+        f"Found {len(candidates)} new candidate lead(s) after filtering "
+        f"(capped at BATCHDATA_MAX_LEADS_PER_RUN={max_leads}; any more are "
+        f"picked up on a future run)."
+    )
 
     api_token = os.environ.get("BATCHDATA_API_KEY")
     batchdata = BatchDataClient(api_token) if api_token else None
     if batchdata is None:
-        print("BATCHDATA_API_KEY not set; skipping skip-trace/valuation/permits.")
+        print("BATCHDATA_API_KEY not set; skipping skip-trace/valuation.")
 
-    leads = [enrich_lead(record, batchdata) for record in to_enrich]
+    leads = [enrich_lead(record, batchdata) for record in candidates]
 
     if leads and not args.no_email:
         send_weekly_digest(leads, os.environ["DIGEST_EMAIL_TO"])
@@ -242,7 +252,7 @@ def main() -> None:
     else:
         print("Nothing new this run.")
 
-    seen.update(record["ACCTID"] for record in to_enrich)
+    seen.update(record["ACCTID"] for record in candidates)
     save_seen_parcels(seen)
 
 
