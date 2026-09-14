@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.2.0 (2026-09-14)
+
+### Features
+
+- Surface BatchData's distress flags; fix valuation request shape
+  ([`bcf3d03`](https://github.com/jpdeburgo/skip-tracer/commit/bcf3d03124f1fbe8bf7d9eef38f6e221740b01dc))
+
+
 ## v0.1.0 (2026-09-14)
 
 ### Features
