@@ -153,6 +153,7 @@ activemq-data/
 .DS_Store
 credentials.json
 token.json
+leads_archive.json
 .venv
 env/
 venv/

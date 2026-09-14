@@ -197,6 +197,28 @@ Render dashboard before the first run:
    email per run listing every lead that passed the filter above.
 7. **`state.load_seen_parcels()` / `save_seen_parcels()`** — dedupe key is
    MD iMap's `ACCTID`.
+8. **`archive.record_leads()` / `save_lead_archive()`** — writes every
+   enriched lead's full data (Zillow link, owner name/phone/email,
+   valuation, distress flags, condition) to a local-only `leads_archive.json`,
+   keyed by `ACCTID`, regardless of whether it passed the filter in step 5 —
+   so losing the digest email doesn't mean re-paying BatchData to recover
+   the data. See "Local lead archive" below for why this is deliberately
+   never synced to GitHub.
+
+## Local lead archive
+
+`leads_archive.json` (gitignored, path overridable via `LEADS_ARCHIVE_PATH`)
+holds every enriched lead's full data locally, so a lost or deleted digest
+email doesn't mean re-paying BatchData to get that data back.
+
+**This file is deliberately never synced to GitHub**, unlike `state.json`'s
+optional `ST_GITHUB_TOKEN` backing. It contains real property owners' names,
+phone numbers, and email addresses — and this repo is **public**. Committing
+that would put third parties' contact info into permanent, public git
+history. If you need this archive to survive a host with an ephemeral disk
+(e.g. Render Cron without an attached persistent disk) between runs, point
+`LEADS_ARCHIVE_PATH` at a mounted persistent disk there — don't route it
+through GitHub unless you first make this repo private.
 
 ## Releases
 

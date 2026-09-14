@@ -25,6 +25,7 @@ from .batchdata_client import (
     flag_low_margin,
     max_allowable_offer,
 )
+from .archive import load_lead_archive, record_leads, save_lead_archive
 from .condition import condition_tier, estimate_repair_cost
 from .filtering import classify_owner_entity, contactability_tier, is_genuinely_absentee
 from .gmail_client import get_gmail_service, send_email
@@ -348,6 +349,11 @@ def main() -> None:
         print("BATCHDATA_API_KEY not set; skipping skip-trace/valuation.")
 
     enriched = [enrich_lead(record, batchdata) for record in candidates]
+
+    archive = load_lead_archive()
+    record_leads(archive, enriched)
+    save_lead_archive(archive)
+
     leads = filter_worth_pursuing(enriched)
     if len(leads) < len(enriched):
         print(f"Filtered out {len(enriched) - len(leads)} lead(s) not worth pursuing.")
