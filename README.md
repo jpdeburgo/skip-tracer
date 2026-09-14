@@ -181,10 +181,21 @@ Render dashboard before the first run:
    MAO. Also builds a Zillow search link (from `PREMCITY`, not `CITY` — MD
    iMap's two city fields can disagree; see `zillow.py`'s docstring for the
    confirmed real example). Degrades per-lead on any BatchData failure
-   rather than failing the run.
-5. **`cli.build_digest_body()` / `send_weekly_digest()`** — one digest
-   email per run listing every newly-enriched lead.
-6. **`state.load_seen_parcels()` / `save_seen_parcels()`** — dedupe key is
+   rather than failing the run. Also captures the owner's email (preferring
+   one BatchData has actually tested/verified over an untested one) and a
+   `corporate_or_trust_owned` flag from `quickLists.corporateOwned`/
+   `trustOwned`.
+5. **`cli.filter_worth_pursuing(leads)`** — drops leads `cli._exclusion_reasons()`
+   flags as not worth pursuing: low/negative margin (`low_margin` true, or
+   a computed MAO `<= $0`), no phone *and* no email, or corporate/trust
+   ownership. A dropped lead is still marked seen (see point 7) — it was
+   already paid for, so it isn't re-enriched next run just because this
+   run didn't send it. This is a digest filter, not a pre-enrichment one:
+   margin and ownership are only knowable after the BatchData calls that
+   already cost money.
+6. **`cli.build_digest_body()` / `send_weekly_digest()`** — one digest
+   email per run listing every lead that passed the filter above.
+7. **`state.load_seen_parcels()` / `save_seen_parcels()`** — dedupe key is
    MD iMap's `ACCTID`.
 
 ## Releases
@@ -224,6 +235,21 @@ subject line.
   here.
 - **Street View + vision-model condition assessment is deferred to v2** —
   also tracked as a GitHub issue.
+
+## No automated outreach to owners (by design)
+
+This pipeline emails a digest to *you* for manual review — it does not,
+and should not without real legal review, text, call, or email property
+owners automatically. `batchdata_client.py`'s `check_dnc()`/`check_tcpa()`
+exist for that future workflow but aren't called by anything today.
+Automated marketing texts/calls are high-risk under the **TCPA**
+(statutory damages of $500-$1,500 per message, trebled if willful, and a
+real history of class actions against skip-traced cold-texting), and
+automated marketing email is lower-risk but still regulated under
+**CAN-SPAM**. Some states also restrict soliciting distressed/pre-foreclosure
+homeowners specifically — relevant here given the distress signals this
+pipeline surfaces. None of this is legal advice; get a real TCPA/real-estate
+attorney's sign-off before building outreach automation on top of this.
 
 See the repo's GitHub issues for the full v2 backlog with context for
 picking each one up cold.

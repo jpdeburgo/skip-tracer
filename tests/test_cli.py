@@ -9,6 +9,11 @@ REAL_SKIP_TRACE_RESPONSE = {
             {
                 "name": {"full": "Gunay H Evinch"},
                 "phoneNumbers": [{"number": "3013092221", "dnc": True}],
+                "emails": [
+                    {"email": "gevinch@saltzmanevinch.com", "tested": True},
+                    {"email": "egunay1@bellsouth.net", "tested": False},
+                    {"email": "gevinch@yahoo.com", "tested": False},
+                ],
                 "dnc": {"tcpa": False},
                 "property": {"owner": {"name": {"full": "Atalay Evinch"}}},
             }
@@ -137,6 +142,8 @@ def test_enrich_lead_parses_real_batchdata_response_shapes():
     assert lead.low_margin is False  # assessed 1,481,200 < ARV 1,512,714
     assert lead.condition_tier == "unassessed"  # STRUGRAD absent from this record
     assert lead.distress_flags == ["High Equity"]  # only true flag in the real quickLists
+    assert lead.email == "gevinch@saltzmanevinch.com"  # tested email preferred over untested
+    assert lead.corporate_or_trust_owned is False
 
 
 def test_distress_flags_only_includes_true_flags_in_label_order():
@@ -233,3 +240,60 @@ def test_build_digest_body_shows_unknown_for_missing_dollar_figures():
     assert "unknown" in body
     assert "Max allowable offer" not in body  # omitted entirely when there's no MAO
     assert "Distress signals" not in body  # omitted entirely when there are none
+
+
+def _viable_lead(**overrides):
+    """A lead that passes every _exclusion_reasons() check by default."""
+    defaults = dict(
+        acctid="1",
+        address="1 Main St",
+        phone="555-1234",
+        low_margin=False,
+        mao_estimate=50_000,
+        corporate_or_trust_owned=False,
+    )
+    return cli.Lead(**{**defaults, **overrides})
+
+
+def test_exclusion_reasons_empty_for_a_viable_lead():
+    assert cli._exclusion_reasons(_viable_lead()) == []
+
+
+def test_exclusion_reasons_flags_low_margin():
+    assert "low margin" in cli._exclusion_reasons(_viable_lead(low_margin=True))[0]
+
+
+def test_exclusion_reasons_flags_non_positive_mao():
+    assert "max allowable offer" in cli._exclusion_reasons(_viable_lead(mao_estimate=0))[0]
+    assert "max allowable offer" in cli._exclusion_reasons(_viable_lead(mao_estimate=-500))[0]
+
+
+def test_exclusion_reasons_ignores_missing_mao():
+    # No MAO data at all (e.g. BatchData unavailable) isn't itself a reason
+    # to exclude - there's nothing to judge margin against.
+    assert cli._exclusion_reasons(_viable_lead(mao_estimate=None)) == []
+
+
+def test_exclusion_reasons_flags_no_contact_info():
+    lead = _viable_lead(phone=None, email=None)
+    assert "no phone or email found" in cli._exclusion_reasons(lead)
+
+
+def test_exclusion_reasons_email_alone_is_sufficient_contact_info():
+    lead = _viable_lead(phone=None, email="owner@example.com")
+    assert "no phone or email found" not in cli._exclusion_reasons(lead)
+
+
+def test_exclusion_reasons_flags_corporate_or_trust_owned():
+    lead = _viable_lead(corporate_or_trust_owned=True)
+    assert "corporate/trust owned" in cli._exclusion_reasons(lead)
+
+
+def test_filter_worth_pursuing_drops_only_excluded_leads(capsys):
+    keep = _viable_lead(acctid="keep")
+    drop = _viable_lead(acctid="drop", corporate_or_trust_owned=True)
+
+    kept = cli.filter_worth_pursuing([keep, drop])
+
+    assert kept == [keep]
+    assert "Not pursuing drop" in capsys.readouterr().out

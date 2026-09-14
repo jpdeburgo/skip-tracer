@@ -73,6 +73,7 @@ class Lead:
     address: str
     owner_name: str = "unknown"
     phone: str | None = None
+    email: str | None = None
     do_not_call: bool | None = None
     tcpa_risk: bool | None = None
     motivation_signal: str = "Absentee owner"
@@ -84,6 +85,7 @@ class Lead:
     repair_cost_estimate: float | None = None
     mao_estimate: float | None = None
     low_margin: bool | None = None
+    corporate_or_trust_owned: bool = False
     distress_flags: list[str] = field(default_factory=list)
     zillow_link: str = ""
 
@@ -183,6 +185,12 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
                 lead.phone = phones[0].get("number")
                 lead.do_not_call = phones[0].get("dnc")
             lead.tcpa_risk = person.get("dnc", {}).get("tcpa")
+            emails = person.get("emails", [])
+            if emails:
+                # Prefer an address BatchData has actually tested/verified
+                # deliverable over an untested one, when both exist.
+                tested = [e.get("email") for e in emails if e.get("tested")]
+                lead.email = tested[0] if tested else emails[0].get("email")
             # The deed owner, not necessarily the person tied to the phone
             # number above (that's whoever's reachable at the owner's
             # mailing address, per BatchData) — see batchdata_client.py's
@@ -208,7 +216,11 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
                 latest_permit_year = _year_from_iso_date(permit.get("latestDate"))
                 if permit.get("permitCount") and latest_permit_year is not None:
                     permit_history = [{"year": latest_permit_year}]
-                lead.distress_flags = _distress_flags(prop.get("quickLists") or {})
+                quick_lists = prop.get("quickLists") or {}
+                lead.distress_flags = _distress_flags(quick_lists)
+                lead.corporate_or_trust_owned = bool(
+                    quick_lists.get("corporateOwned") or quick_lists.get("trustOwned")
+                )
         except Exception as error:  # noqa: BLE001
             print(f"valuation lookup failed for {lead.acctid}: {error}")
 
@@ -224,6 +236,38 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
             lead.arv_estimate, lead.repair_cost_estimate
         )
     return lead
+
+
+def _exclusion_reasons(lead: Lead) -> list[str]:
+    """Reasons a lead isn't worth pursuing. Only flags what can actually be
+    determined from data on hand — a lead with no valuation data at all
+    (e.g. BatchData unavailable) isn't excluded on margin grounds, since
+    there's nothing to judge it against."""
+    reasons = []
+    if lead.low_margin is True:
+        reasons.append("low margin (current value >= ARV)")
+    if lead.mao_estimate is not None and lead.mao_estimate <= 0:
+        reasons.append("max allowable offer <= $0")
+    if not lead.phone and not lead.email:
+        reasons.append("no phone or email found")
+    if lead.corporate_or_trust_owned:
+        reasons.append("corporate/trust owned")
+    return reasons
+
+
+def filter_worth_pursuing(leads: list[Lead]) -> list[Lead]:
+    """Drops leads flagged by _exclusion_reasons() from the digest. Callers
+    should still mark every lead's ACCTID as seen regardless of this
+    filter's outcome — a lead that isn't worth pursuing today was still
+    paid for, so it shouldn't be re-enriched (re-billed) on a future run."""
+    kept = []
+    for lead in leads:
+        reasons = _exclusion_reasons(lead)
+        if reasons:
+            print(f"Not pursuing {lead.acctid} ({lead.address}): {', '.join(reasons)}")
+        else:
+            kept.append(lead)
+    return kept
 
 
 def _format_currency(value: float | None) -> str:
@@ -254,6 +298,7 @@ def build_digest_body(leads: list[Lead]) -> str:
         body_lines.append(
             f"{lead.address}\n"
             f"  Owner: {lead.owner_name} | Phone: {lead.phone or 'n/a'}{dnc_note}{tcpa_note} | "
+            f"Email: {lead.email or 'n/a'} | "
             f"Signal: {lead.motivation_signal} | Condition: {lead.condition_tier}"
             f"{margin_note}\n"
             f"{distress_line}"
@@ -302,7 +347,10 @@ def main() -> None:
     if batchdata is None:
         print("BATCHDATA_API_KEY not set; skipping skip-trace/valuation.")
 
-    leads = [enrich_lead(record, batchdata) for record in candidates]
+    enriched = [enrich_lead(record, batchdata) for record in candidates]
+    leads = filter_worth_pursuing(enriched)
+    if len(leads) < len(enriched):
+        print(f"Filtered out {len(enriched) - len(leads)} lead(s) not worth pursuing.")
 
     if leads and not args.no_email:
         send_weekly_digest(leads, os.environ["DIGEST_EMAIL_TO"])
@@ -312,6 +360,9 @@ def main() -> None:
     else:
         print("Nothing new this run.")
 
+    # Every candidate counts as seen regardless of filter_worth_pursuing()'s
+    # outcome — it was already paid for, so it shouldn't be re-enriched
+    # (re-billed) on a future run just because this run didn't send it.
     seen.update(record["ACCTID"] for record in candidates)
     save_seen_parcels(seen)
 
