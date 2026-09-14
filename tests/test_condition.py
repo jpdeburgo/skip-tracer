@@ -1,4 +1,4 @@
-from skip_tracer.condition import condition_tier
+from skip_tracer.condition import condition_tier, estimate_repair_cost
 
 
 def test_likely_updated_with_high_grade_and_recent_permit():
@@ -31,3 +31,20 @@ def test_unassessed_when_low_grade_but_has_recent_permits():
 def test_unassessed_for_mid_range_grade():
     record = {"STRUGRAD": "5"}
     assert condition_tier(record, []) == "unassessed"
+
+
+def test_estimate_repair_cost_for_likely_updated():
+    assert estimate_repair_cost("likely-updated", 1000) == 12_000.0
+
+
+def test_estimate_repair_cost_for_likely_dated():
+    assert estimate_repair_cost("likely-dated", 1000) == 40_000.0
+
+
+def test_estimate_repair_cost_none_for_unassessed_tier():
+    assert estimate_repair_cost("unassessed", 1000) is None
+
+
+def test_estimate_repair_cost_none_without_square_footage():
+    assert estimate_repair_cost("likely-dated", None) is None
+    assert estimate_repair_cost("likely-dated", 0) is None

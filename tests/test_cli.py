@@ -151,7 +151,31 @@ def test_enrich_lead_skip_trace_owner_used_when_valuation_has_no_properties():
     assert lead.arv_estimate is None
 
 
-def test_build_digest_body_includes_low_margin_and_dnc_flags():
+def test_enrich_lead_computes_repair_cost_and_mao_when_condition_known():
+    record = _record(
+        "1", "100 Other St", ADDRESS="200 Main St", STRUGRAD="3", SQFTSTRC=1000
+    )
+
+    class _LowGradeNoPermitsClient:
+        def skip_trace(self, address):
+            return {"results": {"persons": [{}]}}
+
+        def lookup_valuation(self, address):
+            return {
+                "results": {
+                    "properties": [{"valuation": {"estimatedValue": 300_000}, "permit": {}}]
+                }
+            }
+
+    lead = cli.enrich_lead(record, batchdata=_LowGradeNoPermitsClient())
+
+    assert lead.condition_tier == "likely-dated"  # low grade, no recent permits
+    assert lead.repair_cost_estimate == 40_000.0  # 1000 sqft * $40/sqft rule-of-thumb
+    assert lead.arv_estimate == 300_000
+    assert lead.mao_estimate == 300_000 * 0.70 - 40_000
+
+
+def test_build_digest_body_includes_valuation_and_mao_figures():
     lead = cli.Lead(
         acctid="1",
         address="7924 Lakenheath Way",
@@ -159,9 +183,27 @@ def test_build_digest_body_includes_low_margin_and_dnc_flags():
         phone="555-1234",
         do_not_call=True,
         low_margin=True,
+        assessed_value=300_000,
+        arv_estimate=350_000,
+        repair_cost_estimate=40_000,
+        mao_estimate=205_000,
         zillow_link="https://example.com",
     )
     body = cli.build_digest_body([lead])
     assert "LOW MARGIN" in body
     assert "DNC" in body
     assert "Jane Doe" in body
+    assert "$300,000" in body  # current value (assessed_value)
+    assert "$40,000" in body  # repair cost estimate
+    assert "$350,000" in body  # potential ARV
+    assert "$205,000" in body  # max allowable offer
+    assert "rule-of-thumb" in body
+
+
+def test_build_digest_body_shows_unknown_for_missing_dollar_figures():
+    lead = cli.Lead(acctid="1", address="1 Main St", zillow_link="https://example.com")
+
+    body = cli.build_digest_body([lead])
+
+    assert "unknown" in body
+    assert "Max allowable offer" not in body  # omitted entirely when there's no MAO

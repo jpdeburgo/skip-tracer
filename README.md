@@ -159,15 +159,22 @@ Render dashboard before the first run:
    `skip_trace()` for phone + its embedded per-phone DNC flag + person-level
    TCPA flag (the owner name comes from `property.owner.name`, not the
    top-level person, who's just whoever's reachable at the owner's mailing
-   address), and `lookup_valuation()` for the ARV estimate, a fuller owner
-   name, and an embedded permit summary that feeds
-   `condition.condition_tier()` — no separate permits/DNC/TCPA calls needed
-   (`batchdata_client.py`'s module docstring has the full reasoning). Also
-   computes `flag_low_margin()` against the county's own assessed value and
-   builds a Zillow search link (from `PREMCITY`, not `CITY` — MD iMap's two
-   city fields can disagree; see `zillow.py`'s docstring for the confirmed
-   real example). Degrades per-lead on any BatchData failure rather than
-   failing the run.
+   address), and `lookup_valuation()` for the **potential ARV**
+   (`valuation.estimatedValue`), a fuller owner name, and an embedded
+   permit summary that feeds `condition.condition_tier()` — no separate
+   permits/DNC/TCPA calls needed (`batchdata_client.py`'s module docstring
+   has the full reasoning). MD iMap's own county-assessed value
+   (`NFMTTLVL`) is shown as the lead's **current value**. From there:
+   `condition.estimate_repair_cost()` turns the condition tier into a flat
+   $/sqft rule-of-thumb **repair-cost estimate** (not a contractor quote —
+   only produced for `likely-updated`/`likely-dated`, since `unassessed`
+   carries no signal to even guess from), `flag_low_margin()` flags when
+   current value already meets/exceeds ARV, and — once both ARV and a
+   repair estimate exist — `max_allowable_offer()` computes the 70%-rule
+   MAO. Also builds a Zillow search link (from `PREMCITY`, not `CITY` — MD
+   iMap's two city fields can disagree; see `zillow.py`'s docstring for the
+   confirmed real example). Degrades per-lead on any BatchData failure
+   rather than failing the run.
 5. **`cli.build_digest_body()` / `send_weekly_digest()`** — one digest
    email per run listing every newly-enriched lead.
 6. **`state.load_seen_parcels()` / `save_seen_parcels()`** — dedupe key is
@@ -197,10 +204,14 @@ subject line.
 
 ## Known limitations (v1 POC)
 
-- **No repair-cost source.** `batchdata_client.max_allowable_offer()` exists
-  but isn't wired into the pipeline — nothing here produces an actual
-  dollar repair estimate, so `condition.condition_tier()` is a triage tier,
-  not a number a 70%-rule MAO calculation could use yet.
+- **Repair cost is a rule-of-thumb, not a real quote.**
+  `condition.estimate_repair_cost()` applies a flat $/sqft figure by
+  condition tier (`likely-updated` -> $12/sqft, `likely-dated` -> $40/sqft
+  — see `condition.py`'s `REPAIR_COST_PER_SQFT`) — no inspection or
+  contractor input exists anywhere in this pipeline. Treat the digest's
+  "Est. repair cost" and the MAO derived from it as a rough starting point
+  for triage, not a number to make an offer on directly. Tune the two
+  dollar amounts once you have real rehab cost data from actual deals.
 - **DC and two other markets (Tarrant County TX, Baltimore/Anne Arundel) are
   out of scope for v1** — tracked as GitHub issues (see below), not built
   here.

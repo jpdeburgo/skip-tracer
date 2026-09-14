@@ -19,8 +19,13 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from .batchdata_client import BatchDataClient, PropertyAddress, flag_low_margin
-from .condition import condition_tier
+from .batchdata_client import (
+    BatchDataClient,
+    PropertyAddress,
+    flag_low_margin,
+    max_allowable_offer,
+)
+from .condition import condition_tier, estimate_repair_cost
 from .filtering import classify_owner_entity, contactability_tier, is_genuinely_absentee
 from .gmail_client import get_gmail_service, send_email
 from .imap_client import PROCESSING_ORDER, fetch_jurisdiction_leads
@@ -54,6 +59,8 @@ class Lead:
     condition_tier: str = "unassessed"
     assessed_value: float | None = None
     arv_estimate: float | None = None
+    repair_cost_estimate: float | None = None
+    mao_estimate: float | None = None
     low_margin: bool | None = None
     zillow_link: str = ""
 
@@ -185,7 +192,18 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
             lead.low_margin = flag_low_margin(lead.assessed_value, lead.arv_estimate)
 
     lead.condition_tier = condition_tier(record, permit_history)
+    lead.repair_cost_estimate = estimate_repair_cost(
+        lead.condition_tier, record.get("SQFTSTRC")
+    )
+    if lead.arv_estimate is not None and lead.repair_cost_estimate is not None:
+        lead.mao_estimate = max_allowable_offer(
+            lead.arv_estimate, lead.repair_cost_estimate
+        )
     return lead
+
+
+def _format_currency(value: float | None) -> str:
+    return f"${value:,.0f}" if value is not None else "unknown"
 
 
 def build_digest_body(leads: list[Lead]) -> str:
@@ -193,14 +211,26 @@ def build_digest_body(leads: list[Lead]) -> str:
     for lead in leads:
         margin_note = ""
         if lead.low_margin is True:
-            margin_note = " | LOW MARGIN (assessed value >= ARV estimate)"
+            margin_note = " | LOW MARGIN (current value >= ARV estimate)"
         dnc_note = " | DNC" if lead.do_not_call else ""
         tcpa_note = " | TCPA RISK" if lead.tcpa_risk else ""
+        repair_note = (
+            " (rule-of-thumb, not a quote)" if lead.repair_cost_estimate is not None else ""
+        )
+        mao_line = (
+            f"  Max allowable offer (70% rule): {_format_currency(lead.mao_estimate)}\n"
+            if lead.mao_estimate is not None
+            else ""
+        )
         body_lines.append(
             f"{lead.address}\n"
             f"  Owner: {lead.owner_name} | Phone: {lead.phone or 'n/a'}{dnc_note}{tcpa_note} | "
             f"Signal: {lead.motivation_signal} | Condition: {lead.condition_tier}"
             f"{margin_note}\n"
+            f"  Current value: {_format_currency(lead.assessed_value)} | "
+            f"Est. repair cost: {_format_currency(lead.repair_cost_estimate)}{repair_note} | "
+            f"Potential ARV: {_format_currency(lead.arv_estimate)}\n"
+            f"{mao_line}"
             f"  Zillow: {lead.zillow_link}\n"
         )
     return "\n".join(body_lines)
