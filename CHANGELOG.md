@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.3.0 (2026-09-14)
+
+### Features
+
+- Filter out leads not worth pursuing; capture owner email
+  ([`77a3833`](https://github.com/jpdeburgo/skip-tracer/commit/77a3833a68146ae560a3d9c33589c5275620a2a3))
+
+
 ## v0.2.0 (2026-09-14)
 
 ### Features
