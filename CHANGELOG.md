@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.0.2 (2026-09-14)
+
+### Bug Fixes
+
+- NER pipeline kwarg and unbounded entity classification scan
+  ([`6a9757e`](https://github.com/jpdeburgo/skip-tracer/commit/6a9757ebf63d09ffc2ba8174387f4eaa6bd08976))
+
+
 ## v0.0.1 (2026-09-14)
 
 ### Bug Fixes
