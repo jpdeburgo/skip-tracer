@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import argparse
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from dotenv import load_dotenv
@@ -44,6 +44,28 @@ DEFAULT_MAX_LEADS_PER_RUN = 25
 # MD iMap returns CONVEY1 as an int, not a string.
 NON_SALE_TRANSFER_CODE = 4
 
+# BatchData's valuation lookup returns a quickLists object of dozens of
+# booleans — this is the subset that's actually decision-relevant for an
+# off-market flip lead. Order matters: it's the display order in the digest.
+DISTRESS_FLAG_LABELS = {
+    "vacant": "Vacant",
+    "preforeclosure": "Pre-Foreclosure",
+    "noticeOfDefault": "Notice of Default",
+    "noticeOfSale": "Notice of Sale",
+    "noticeOfLisPendens": "Notice of Lis Pendens",
+    "taxDefault": "Tax Default",
+    "involuntaryLien": "Involuntary Lien",
+    "inherited": "Inherited",
+    "tiredLandlord": "Tired Landlord",
+    "freeAndClear": "Free and Clear (no mortgage)",
+    "highEquity": "High Equity",
+    "lowEquity": "Low Equity",
+}
+
+
+def _distress_flags(quick_lists: dict[str, Any]) -> list[str]:
+    return [label for key, label in DISTRESS_FLAG_LABELS.items() if quick_lists.get(key)]
+
 
 @dataclass
 class Lead:
@@ -62,6 +84,7 @@ class Lead:
     repair_cost_estimate: float | None = None
     mao_estimate: float | None = None
     low_margin: bool | None = None
+    distress_flags: list[str] = field(default_factory=list)
     zillow_link: str = ""
 
 
@@ -185,6 +208,7 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
                 latest_permit_year = _year_from_iso_date(permit.get("latestDate"))
                 if permit.get("permitCount") and latest_permit_year is not None:
                     permit_history = [{"year": latest_permit_year}]
+                lead.distress_flags = _distress_flags(prop.get("quickLists") or {})
         except Exception as error:  # noqa: BLE001
             print(f"valuation lookup failed for {lead.acctid}: {error}")
 
@@ -222,11 +246,17 @@ def build_digest_body(leads: list[Lead]) -> str:
             if lead.mao_estimate is not None
             else ""
         )
+        distress_line = (
+            f"  Distress signals: {', '.join(lead.distress_flags)}\n"
+            if lead.distress_flags
+            else ""
+        )
         body_lines.append(
             f"{lead.address}\n"
             f"  Owner: {lead.owner_name} | Phone: {lead.phone or 'n/a'}{dnc_note}{tcpa_note} | "
             f"Signal: {lead.motivation_signal} | Condition: {lead.condition_tier}"
             f"{margin_note}\n"
+            f"{distress_line}"
             f"  Current value: {_format_currency(lead.assessed_value)} | "
             f"Est. repair cost: {_format_currency(lead.repair_cost_estimate)}{repair_note} | "
             f"Potential ARV: {_format_currency(lead.arv_estimate)}\n"

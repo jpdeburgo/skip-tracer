@@ -11,10 +11,21 @@ scripts/test_skip_trace.py and scripts/test_valuation.py:
 - lookup_valuation() returns a single AVM figure
   (results.properties[0].valuation.estimatedValue), not raw comps, so no
   comp-weighting helper is needed here.
-- It also returns owner name(s) (results.properties[0].owner.fullName) and
-  a rolled-up permit summary (results.properties[0].permit) for the same
-  call — cli.enrich_lead() uses these instead of separate calls to
-  get_property_permits() below, to avoid paying for data already returned.
+- It also returns owner name(s) (results.properties[0].owner.fullName), a
+  rolled-up permit summary (results.properties[0].permit), and a
+  results.properties[0].quickLists object of real distress/motivation
+  booleans (vacant, taxDefault, preforeclosure, inherited, tiredLandlord,
+  freeAndClear, highEquity/lowEquity, etc.) — cli.enrich_lead() uses the
+  permit summary instead of a separate get_property_permits() call, and
+  surfaces quickLists directly, all from this one call.
+- The request's options.datasets field (documented at
+  developer.batchdata.com) is meant to scope which of BatchData's ~14
+  dataset categories come back. Tested requesting
+  options.datasets=["valuation","owner","permit","quicklist"] against this
+  account's token: the response was identical to not specifying datasets
+  at all (still every category). Either this token's plan always returns
+  everything regardless of the field, or the field isn't enforced — either
+  way, don't rely on it to reduce payload size or cost for this account.
 - skip_trace()'s top-level results.persons[0].name is a resident at the
   owner's mailing address, not necessarily the deed owner — that's
   results.persons[0].property.owner.name. Its phoneNumbers[] entries each
@@ -89,11 +100,22 @@ class BatchDataClient:
         )
 
     def lookup_valuation(self, address: PropertyAddress) -> dict[str, Any]:
-        """`dataset: "valuation"` is one of 14 documented dataset/projection
-        options alongside basic/core/foreclosure."""
+        """options.datasets is BatchData's documented field for scoping
+        which dataset categories come back (see this module's docstring for
+        why it doesn't appear to narrow anything for this account) —
+        request exactly what cli.enrich_lead() reads."""
         return self._post(
             "property/lookup/all-attributes",
-            {"requests": [{"address": address.as_dict()}], "dataset": "valuation"},
+            {
+                "requests": [
+                    {
+                        "address": address.as_dict(),
+                        "options": {
+                            "datasets": ["valuation", "owner", "permit", "quicklist"]
+                        },
+                    }
+                ]
+            },
         )
 
     def get_property_permits(self, address: PropertyAddress) -> list[dict[str, Any]]:

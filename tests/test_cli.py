@@ -26,6 +26,9 @@ REAL_VALUATION_RESPONSE = {
                     "permitCount": 2,
                     "latestDate": "2010-07-28T00:00:00.000Z",
                 },
+                # Real captured quickLists for this property — every
+                # distress flag false except highEquity.
+                "quickLists": {"vacant": False, "taxDefault": False, "highEquity": True},
             }
         ]
     }
@@ -133,6 +136,26 @@ def test_enrich_lead_parses_real_batchdata_response_shapes():
     assert lead.arv_estimate == 1512714
     assert lead.low_margin is False  # assessed 1,481,200 < ARV 1,512,714
     assert lead.condition_tier == "unassessed"  # STRUGRAD absent from this record
+    assert lead.distress_flags == ["High Equity"]  # only true flag in the real quickLists
+
+
+def test_distress_flags_only_includes_true_flags_in_label_order():
+    quick_lists = {
+        "lowEquity": True,
+        "vacant": True,
+        "taxDefault": False,
+        "preforeclosure": True,
+        "tiredLandlord": False,
+    }
+    assert cli._distress_flags(quick_lists) == [
+        "Vacant",
+        "Pre-Foreclosure",
+        "Low Equity",
+    ]
+
+
+def test_distress_flags_empty_when_nothing_true():
+    assert cli._distress_flags({"vacant": False, "taxDefault": False}) == []
 
 
 def test_enrich_lead_skip_trace_owner_used_when_valuation_has_no_properties():
@@ -187,6 +210,7 @@ def test_build_digest_body_includes_valuation_and_mao_figures():
         arv_estimate=350_000,
         repair_cost_estimate=40_000,
         mao_estimate=205_000,
+        distress_flags=["Vacant", "Tax Default"],
         zillow_link="https://example.com",
     )
     body = cli.build_digest_body([lead])
@@ -198,6 +222,7 @@ def test_build_digest_body_includes_valuation_and_mao_figures():
     assert "$350,000" in body  # potential ARV
     assert "$205,000" in body  # max allowable offer
     assert "rule-of-thumb" in body
+    assert "Distress signals: Vacant, Tax Default" in body
 
 
 def test_build_digest_body_shows_unknown_for_missing_dollar_figures():
@@ -207,3 +232,4 @@ def test_build_digest_body_shows_unknown_for_missing_dollar_figures():
 
     assert "unknown" in body
     assert "Max allowable offer" not in body  # omitted entirely when there's no MAO
+    assert "Distress signals" not in body  # omitted entirely when there are none

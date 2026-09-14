@@ -160,11 +160,18 @@ Render dashboard before the first run:
    TCPA flag (the owner name comes from `property.owner.name`, not the
    top-level person, who's just whoever's reachable at the owner's mailing
    address), and `lookup_valuation()` for the **potential ARV**
-   (`valuation.estimatedValue`), a fuller owner name, and an embedded
-   permit summary that feeds `condition.condition_tier()` — no separate
+   (`valuation.estimatedValue`), a fuller owner name, an embedded permit
+   summary that feeds `condition.condition_tier()`, and a `quickLists`
+   object of real distress/motivation booleans (`cli._distress_flags()`
+   surfaces vacant/pre-foreclosure/tax-default/inherited/tired-landlord/
+   equity-position ones in the digest when true) — no separate
    permits/DNC/TCPA calls needed (`batchdata_client.py`'s module docstring
-   has the full reasoning). MD iMap's own county-assessed value
-   (`NFMTTLVL`) is shown as the lead's **current value**. From there:
+   has the full reasoning). Note: `condition_tier()`/MD iMap's own
+   `STRUGRAD` field is the only actual property-*condition* signal in this
+   pipeline — BatchData's response has no condition/quality-grade field of
+   its own for this property (checked directly against the raw response).
+   MD iMap's own county-assessed value (`NFMTTLVL`) is shown as the lead's
+   **current value**. From there:
    `condition.estimate_repair_cost()` turns the condition tier into a flat
    $/sqft rule-of-thumb **repair-cost estimate** (not a contractor quote —
    only produced for `likely-updated`/`likely-dated`, since `unassessed`
