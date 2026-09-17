@@ -1,3 +1,5 @@
+import sys
+
 import skip_tracer.cli as cli
 
 # Trimmed to the fields cli.py reads, from a real call against 11132
@@ -297,3 +299,99 @@ def test_filter_worth_pursuing_drops_only_excluded_leads(capsys):
 
     assert kept == [keep]
     assert "Not pursuing drop" in capsys.readouterr().out
+
+
+def _stub_main_dependencies(monkeypatch, records, passing_acctids):
+    """Wires up every cli.main() side-effect except enrich_lead's outcome
+    (controlled via passing_acctids) so the enrichment-loop control flow
+    can be tested without touching BatchData, Gmail, or state.json/archive
+    files for real."""
+    monkeypatch.setattr(cli, "load_seen_parcels", lambda: set())
+    monkeypatch.setattr(
+        cli, "gather_new_leads", lambda seen, jurisdictions, limit: records[:limit]
+    )
+
+    enrich_calls = []
+
+    def fake_enrich(record, batchdata):
+        enrich_calls.append(record["ACCTID"])
+        passes = record["ACCTID"] in passing_acctids
+        return cli.Lead(
+            acctid=record["ACCTID"],
+            address=record["ADDRESS"],
+            phone="555-0000" if passes else None,
+            low_margin=False,
+        )
+
+    monkeypatch.setattr(cli, "enrich_lead", fake_enrich)
+
+    saved_seen = {}
+    monkeypatch.setattr(cli, "save_seen_parcels", lambda seen: saved_seen.update(seen=seen))
+    monkeypatch.setattr(cli, "load_lead_archive", lambda: {})
+    archived = []
+    monkeypatch.setattr(
+        cli, "record_leads", lambda arch, leads: archived.extend(leads) or arch
+    )
+    monkeypatch.setattr(cli, "save_lead_archive", lambda arch: None)
+
+    sent = {}
+    monkeypatch.setattr(
+        cli,
+        "send_weekly_digest",
+        lambda leads, to_email: sent.update(leads=leads, to_email=to_email),
+    )
+
+    monkeypatch.setenv("DIGEST_EMAIL_TO", "me@example.com")
+    monkeypatch.delenv("BATCHDATA_API_KEY", raising=False)
+    monkeypatch.setattr(sys, "argv", ["skip_tracer.cli"])
+
+    return enrich_calls, saved_seen, archived, sent
+
+
+def test_main_stops_enriching_once_target_matches_found(monkeypatch):
+    records = [_record(str(i), "100 Other St") for i in range(10)]
+    enrich_calls, saved_seen, archived, sent = _stub_main_dependencies(
+        monkeypatch, records, passing_acctids={"0", "1"}
+    )
+    monkeypatch.setenv("BATCHDATA_MAX_LEADS_PER_RUN", "2")
+    monkeypatch.setenv("BATCHDATA_MAX_ENRICHMENT_ATTEMPTS", "10")
+
+    cli.main()
+
+    # Only the 2 candidates needed to satisfy target_matches=2 should ever
+    # be enriched (billed) - the other 8 gathered candidates are untouched.
+    assert enrich_calls == ["0", "1"]
+    assert [lead.acctid for lead in sent["leads"]] == ["0", "1"]
+    assert saved_seen["seen"] == {"0", "1"}
+    assert [lead.acctid for lead in archived] == ["0", "1"]
+
+
+def test_main_stops_at_max_attempts_when_match_rate_is_low(monkeypatch, capsys):
+    records = [_record(str(i), "100 Other St") for i in range(10)]
+    enrich_calls, saved_seen, archived, sent = _stub_main_dependencies(
+        monkeypatch, records, passing_acctids={"9"}  # only the last one passes
+    )
+    monkeypatch.setenv("BATCHDATA_MAX_LEADS_PER_RUN", "5")
+    monkeypatch.setenv("BATCHDATA_MAX_ENRICHMENT_ATTEMPTS", "10")
+
+    cli.main()
+
+    # All 10 gathered candidates get tried (the safety cap), but only 1
+    # ever passes - target_matches=5 is never reached.
+    assert enrich_calls == [str(i) for i in range(10)]
+    assert [lead.acctid for lead in sent["leads"]] == ["9"]
+    assert saved_seen["seen"] == set(str(i) for i in range(10))
+    assert "Only found 1 of 5 worth pursuing" in capsys.readouterr().out
+
+
+def test_main_enrichment_attempts_floor_is_at_least_target_matches(monkeypatch):
+    records = [_record(str(i), "100 Other St") for i in range(5)]
+    enrich_calls, *_ = _stub_main_dependencies(monkeypatch, records, passing_acctids=set())
+    # A misconfigured cap smaller than the target shouldn't make it
+    # impossible to ever reach the target even with a 100% hit rate.
+    monkeypatch.setenv("BATCHDATA_MAX_LEADS_PER_RUN", "5")
+    monkeypatch.setenv("BATCHDATA_MAX_ENRICHMENT_ATTEMPTS", "1")
+
+    cli.main()
+
+    assert len(enrich_calls) == 5  # raised to match target_matches, not left at 1

@@ -35,9 +35,15 @@ from .zillow import zillow_search_link
 
 load_dotenv()
 
-# BatchData has no free trial and bills per skip-trace/valuation/permit call
-# — cap spend per run the same way nw-deal-screener day-gates RentCast.
+# BATCHDATA_MAX_LEADS_PER_RUN is a target number of leads worth pursuing to
+# find, not a cap on how many candidates get enriched — most candidates get
+# filtered out by _exclusion_reasons() below, so enrichment keeps going
+# until either that many matches are found or BATCHDATA_MAX_ENRICHMENT_ATTEMPTS
+# candidates have been tried, whichever comes first. That second cap is a
+# hard ceiling on spend for when the match rate is low; BatchData has no
+# free trial and bills per skip-trace/valuation call.
 DEFAULT_MAX_LEADS_PER_RUN = 25
+DEFAULT_MAX_ENRICHMENT_ATTEMPTS_MULTIPLIER = 5
 
 # CONVEY1 code 4 with a null CONSIDR1 (consideration) marks a transfer with
 # no sale price recorded — typically inheritance, divorce, or a similar
@@ -333,14 +339,22 @@ def main() -> None:
     args = parser.parse_args()
 
     seen = load_seen_parcels()
-    max_leads = int(
+    target_matches = int(
         os.environ.get("BATCHDATA_MAX_LEADS_PER_RUN", DEFAULT_MAX_LEADS_PER_RUN)
     )
-    candidates = gather_new_leads(seen, args.jurisdictions, limit=max_leads)
+    max_attempts = int(
+        os.environ.get(
+            "BATCHDATA_MAX_ENRICHMENT_ATTEMPTS",
+            target_matches * DEFAULT_MAX_ENRICHMENT_ATTEMPTS_MULTIPLIER,
+        )
+    )
+    max_attempts = max(max_attempts, target_matches)
+
+    candidates = gather_new_leads(seen, args.jurisdictions, limit=max_attempts)
     print(
-        f"Found {len(candidates)} new candidate lead(s) after filtering "
-        f"(capped at BATCHDATA_MAX_LEADS_PER_RUN={max_leads}; any more are "
-        f"picked up on a future run)."
+        f"Gathered {len(candidates)} candidate lead(s) to try (up to "
+        f"BATCHDATA_MAX_ENRICHMENT_ATTEMPTS={max_attempts}), looking for "
+        f"{target_matches} worth pursuing."
     )
 
     api_token = os.environ.get("BATCHDATA_API_KEY")
@@ -348,15 +362,33 @@ def main() -> None:
     if batchdata is None:
         print("BATCHDATA_API_KEY not set; skipping skip-trace/valuation.")
 
-    enriched = [enrich_lead(record, batchdata) for record in candidates]
+    # Enrichment is the billable part, so it stops as soon as target_matches
+    # leads worth pursuing are found rather than enriching every gathered
+    # candidate regardless of outcome.
+    enriched: list[Lead] = []
+    leads: list[Lead] = []
+    for record in candidates:
+        lead = enrich_lead(record, batchdata)
+        enriched.append(lead)
+        leads.extend(filter_worth_pursuing([lead]))
+        if len(leads) >= target_matches:
+            break
+
+    unenriched = len(candidates) - len(enriched)
+    if unenriched:
+        print(
+            f"{unenriched} gathered candidate(s) left unenriched this run "
+            f"(already found {target_matches} worth pursuing)."
+        )
+    elif len(leads) < target_matches:
+        print(
+            f"Only found {len(leads)} of {target_matches} worth pursuing "
+            f"after trying every gathered candidate this run."
+        )
 
     archive = load_lead_archive()
     record_leads(archive, enriched)
     save_lead_archive(archive)
-
-    leads = filter_worth_pursuing(enriched)
-    if len(leads) < len(enriched):
-        print(f"Filtered out {len(enriched) - len(leads)} lead(s) not worth pursuing.")
 
     if leads and not args.no_email:
         send_weekly_digest(leads, os.environ["DIGEST_EMAIL_TO"])
@@ -366,10 +398,10 @@ def main() -> None:
     else:
         print("Nothing new this run.")
 
-    # Every candidate counts as seen regardless of filter_worth_pursuing()'s
-    # outcome — it was already paid for, so it shouldn't be re-enriched
-    # (re-billed) on a future run just because this run didn't send it.
-    seen.update(record["ACCTID"] for record in candidates)
+    # Only leads actually enriched count as seen — a gathered-but-untried
+    # candidate (because target_matches was already reached) wasn't paid
+    # for, so it stays available to try on a future run.
+    seen.update(lead.acctid for lead in enriched)
     save_seen_parcels(seen)
 
 

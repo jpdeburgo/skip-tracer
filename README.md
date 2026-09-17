@@ -70,14 +70,21 @@ every non-owner-occupied property in the county, not just distressed ones —
 BatchData's skip-trace/valuation/permits calls are what's expensive
 (no free trial), not MD iMap.
 
-`BATCHDATA_MAX_LEADS_PER_RUN` (default `25`) caps how many *new* leads get
-BatchData enrichment per run; the rest are left unseen and picked up on a
-future run rather than being enriched or dropped. Filtering (Modules 1-2) is
-free and runs over every candidate regardless of this cap. `enrich_lead()`
+`BATCHDATA_MAX_LEADS_PER_RUN` (default `25`) is a **target number of leads
+worth pursuing to find**, not a cap on how many candidates get enriched —
+most candidates get dropped by `cli.filter_worth_pursuing()` (see "Pipeline
+logic" below), so `main()` keeps enriching candidates one at a time until
+either that many pass, or `BATCHDATA_MAX_ENRICHMENT_ATTEMPTS` (default: 5x
+the target) candidates have been tried, whichever comes first — that second
+env var is the actual hard ceiling on spend for a run where the match rate
+is low. Enrichment stops as soon as the target is hit, so a gathered-but-
+never-enriched candidate isn't billed and isn't marked seen either — it's
+simply tried again on a future run. Filtering (Modules 1-2) is free and
+runs over every gathered candidate regardless of either cap. `enrich_lead()`
 makes 2 billable BatchData calls per lead (skip-trace + valuation), not 5 —
 see "Pipeline logic" below for why permits/DNC/TCPA don't need their own
-calls. Raise the cap only once you've confirmed that per-lead cost against
-your budget.
+calls. Raise either cap only once you've confirmed per-lead cost and your
+actual match rate against your budget.
 
 ## Test-First Checklist
 
@@ -135,7 +142,9 @@ Render dashboard before the first run:
 3. Add a secret file named `token.json` (the refresh token from completing
    the Gmail flow locally) — mounted at `/etc/secrets/token.json`. Never
    generate either file on Render or commit their contents.
-4. Optionally set `BATCHDATA_MAX_LEADS_PER_RUN` to override the default.
+4. Optionally set `BATCHDATA_MAX_LEADS_PER_RUN` and/or
+   `BATCHDATA_MAX_ENRICHMENT_ATTEMPTS` to override their defaults (see
+   "Cost control" above).
 5. For persistent state across Render's ephemeral cron disk, set
    `ST_GITHUB_TOKEN` (a fine-grained PAT with Contents read/write on this
    repo) and `ST_GITHUB_REPO` — `state.json` is then read/written via the
