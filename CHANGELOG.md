@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.5.0 (2026-09-17)
+
+### Features
+
+- BATCHDATA_MAX_LEADS_PER_RUN is now a target match count, not a scan cap
+  ([`90bd1e0`](https://github.com/jpdeburgo/skip-tracer/commit/90bd1e01666e54f60dc5b45c8d308a66a2f72617))
+
+
 ## v0.4.0 (2026-09-14)
 
 ### Chores
