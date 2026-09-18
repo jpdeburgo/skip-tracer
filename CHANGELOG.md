@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.7.0 (2026-09-18)
+
+### Features
+
+- Payoff-profit prioritization and a BatchData response cache
+  ([#9](https://github.com/jpdeburgo/skip-tracer/pull/9),
+  [`64caf6e`](https://github.com/jpdeburgo/skip-tracer/commit/64caf6e574ebe76d05513c3b05e40dd0d4fd8f8a))
+
+
 ## v0.6.0 (2026-09-18)
 
 ### Features
