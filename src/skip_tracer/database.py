@@ -120,6 +120,7 @@ SCHEMA_STATEMENTS = (
         profit_score       NUMERIC,
         motivation_score   NUMERIC,
         contactability_score NUMERIC,
+        recency_score      NUMERIC,
         total_score        NUMERIC,
         score_breakdown    JSONB,
         disqualified       BOOLEAN NOT NULL DEFAULT FALSE,
@@ -131,6 +132,12 @@ SCHEMA_STATEMENTS = (
         last_contacted_at  TIMESTAMPTZ,
         notes              TEXT
     )
+    """,
+    # Additive migration for databases created before the scoring model
+    # gained a recency dimension. CREATE TABLE IF NOT EXISTS is a no-op on
+    # an existing table, so new columns need their own idempotent ALTER.
+    """
+    ALTER TABLE leads ADD COLUMN IF NOT EXISTS recency_score NUMERIC
     """,
     """
     CREATE INDEX IF NOT EXISTS leads_score_idx
@@ -160,6 +167,7 @@ SCHEMA_STATEMENTS = (
             l.profit_score,
             l.motivation_score,
             l.contactability_score,
+            l.recency_score,
             l.total_score,
             l.status,
             l.phone,
@@ -482,15 +490,16 @@ def upsert_lead(
             """
             INSERT INTO leads (
                 batchdata_id, estimated_profit, profit_score, motivation_score,
-                contactability_score, total_score, score_breakdown,
+                contactability_score, recency_score, total_score, score_breakdown,
                 disqualified, disqualified_reason
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (batchdata_id) DO UPDATE SET
                 updated_at           = NOW(),
                 estimated_profit     = EXCLUDED.estimated_profit,
                 profit_score         = EXCLUDED.profit_score,
                 motivation_score     = EXCLUDED.motivation_score,
                 contactability_score = EXCLUDED.contactability_score,
+                recency_score        = EXCLUDED.recency_score,
                 total_score          = EXCLUDED.total_score,
                 score_breakdown      = EXCLUDED.score_breakdown,
                 disqualified         = EXCLUDED.disqualified,
@@ -503,6 +512,7 @@ def upsert_lead(
                 score.get("profit_score"),
                 score.get("motivation_score"),
                 score.get("contactability_score"),
+                score.get("recency_score"),
                 score.get("total_score"),
                 Jsonb(score.get("breakdown") or {}),
                 score.get("disqualified", False),

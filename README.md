@@ -341,42 +341,115 @@ urgency will not sell at a wholesale price — they'll list it retail. So the
 blended score is scaled by a motivation factor, which keeps a high-equity,
 low-urgency lead from ever topping the call list.
 
-Each property scores 0-100 on three axes:
+Each property scores 0-100 on three axes, and the blend is then scaled by
+two gating factors:
 
 | Axis | Weight | What it measures |
 | --- | --- | --- |
-| Motivation | 0.50 | Foreclosure stage blended with independent distress signals |
-| Profit | 0.35 | Estimated value minus **all** liens, log-scaled |
-| Contactability | 0.15 | How likely we are to reach the actual decision-maker |
+| Motivation | 0.50 | Distress stage blended with independent signals |
+| Profit | 0.35 | Value minus full payoff, log-scaled |
+| Contactability | 0.15 | How likely we are to reach the decision-maker |
 
-Details worth knowing:
+| Gate | Effect | Why it multiplies instead of adding |
+| --- | --- | --- |
+| Motivation factor | 0.5x - 1.0x | A zero-urgency owner should sink, not average out |
+| Recency factor | 0.5x - 1.0x | A 10-month-old filing has usually already resolved |
+| Timing factor | 0.35x / 0.5x / 1.0x | Running out of clock invalidates the deal entirely |
 
-- **Profit is log-scaled, not linear.** Maryland spreads in this catalog run
-  from about $40k to $1.2M. A linear scale with any fixed ceiling made every
-  Bethesda and Annapolis lead pin at 100, which produced nine-way ties and
-  destroyed the ordering. Log scaling also encodes a real effect: going from
-  a $50k to a $150k spread matters far more than $900k to $1M, because very
-  expensive houses have a much smaller cash-buyer pool and are harder to
-  assign.
-- **Motivation blends rather than sums.** Summing stage and signals hit the
-  100 cap on a notice-of-sale plus one failed listing, again flattening the
-  top of the list. Stage carries the larger share because a hard legal
-  deadline drives behavior more reliably than an accumulation of soft
-  signals.
-- **Estimated profit subtracts involuntary liens too.** Tax liens,
-  judgments, and mechanic's liens live in a separate BatchData field and are
-  *not* included in `totalOpenLienBalance`, which only covers voluntary
-  mortgage debt. They still have to be cleared at closing, so ignoring them
-  overstates the spread on exactly the distressed properties we target.
-- **`activeListing` and `pendingListing` are disqualifiers; `failedListing`
-  and `expiredListing` are strong positives.** The distinction is the broker
-  contract, not the intent to sell. A failed listing is proven intent to
-  sell with nobody in the way.
+### Counter-intuitive calls, and why
 
-**These weights are not validated against conversion data.** They are a
-documented, tunable hypothesis based on the call playbook below. Record
-outcomes with `manage_leads.py` and revisit them once there's a real funnel
-to fit against.
+**Early foreclosure beats late.** The obvious model puts `activeAuction`
+and `noticeOfSale` at the top. That is wrong twice over. Maryland gives only
+10-30 days' notice of sale, which is not enough runway to skip-trace, reach
+an owner, negotiate, and close an assignment, so by that stage the deal is
+usually mechanically impossible rather than merely urgent. Arrears, trustee
+and legal fees also compound into the payoff as the case advances, so late
+stages are precisely where the equity we are scoring has already been eaten.
+In a judicial state like Maryland, the lis pendens / Order to Docket is the
+real entry point: the owner knows it is real, but there are still months of
+runway. `noticeOfLisPendens` and `noticeOfDefault` now score highest.
+
+**Tax default is treated as a stage, not a signal.** Tax debt is small
+relative to value (thousands) while mortgage debt is large relative to value
+(hundreds of thousands), so a tax-delinquent owner almost by construction
+still has a constructible spread. It is a motivation signal that does not
+simultaneously destroy the margin, which is exactly the failure mode of
+late-stage foreclosure. It is noisier though, since some owners simply
+forgot or are disputing the bill.
+
+**`expiredListing` outranks `failedListing`.** These are not synonyms. A
+failed listing was withdrawn *before* the contract expired; an expired one
+ran its full term. Verified against our own catalog: the single
+`expiredListing` property also carries `failedListing`, confirming expired
+is a strict subset. A withdrawn-but-unexpired listing may still owe a broker
+commission, and the owner may have decided not to sell at all. Neither flag
+co-occurs with `activeListing`/`onMarket` here, so neither is currently on
+the MLS -- `failedListing` just carries contract risk that `expiredListing`
+does not.
+
+**Bare `absenteeOwner` scores zero.** A content landlord is not a motivated
+seller. Absentee ownership only earns its keep stacked with real distress,
+which the other terms already capture.
+
+### Timing is a feasibility gate, not a preference
+
+BatchData ships real dates in `foreclosure`: `filingDate` is populated on
+100% of our Maryland catalog and `auctionDate` on 87%. This matters more
+than any weight, because **39 of our 48 Maryland properties have an auction
+date that has already passed.** Those owners have most likely already lost
+the house or resolved the case. Without this dimension the call list is
+mostly dead leads sorted by equity.
+
+One data-quality trap worth knowing: `auctionDate` is sometimes a stale
+record carried from an older foreclosure. Our top-ranked lead was filed in
+2026 but carried a 2014 `auctionDate`. Any `auctionDate` earlier than its
+`filingDate` is discarded rather than trusted.
+
+### Profit uses payoff, not loan balance
+
+- **Profit is log-scaled.** Maryland spreads run from about $40k to $1.2M. A
+  linear scale pinned every Bethesda and Annapolis lead at 100 and produced
+  a nine-way tie. Log scaling also encodes a real effect: $50k to $150k of
+  spread matters far more than $900k to $1M, because expensive houses have a
+  much smaller cash-buyer pool and are harder to assign.
+- **`totalOpenLienBalance` is the loan balance, not the payoff.** Missed
+  payments, late fees, trustee costs and advanced taxes accrue on top and
+  grow with the stage of the case, so we apply an arrears haircut that
+  scales with stage. Involuntary liens (tax liens, judgments, mechanic's
+  liens) live in a *separate* BatchData field and are added on top.
+- **Qualification runs the 70% rule directly** (`payoff <= 0.70 x ARV -
+  repairs - fee`) rather than thresholding equity percent, which is only a
+  proxy for it. Equity percent is used solely as a fallback when lien data
+  is missing.
+
+Two honest caveats: `estimatedValue` is an *as-is* AVM but the 70% rule
+wants ARV, so we approximate `ARV = value + repairs`; and repair cost is not
+knowable from a search result, so a flat 15% is assumed. A property needing
+a gut renovation will look better here than it is.
+
+### What this produces
+
+Of 48 Maryland preforeclosures, **7 qualify**. The other 41 break down as 15
+failing the 70% rule, 8 with no spread at all, 9 corporate-owned, and 9
+already listed. That roughly 15% qualify rate is the useful number for
+planning: reaching ~50 callable leads needs about 340 catalogued properties,
+i.e. roughly 14 more billable pages, not 159.
+
+### On "1 in 50 calls"
+
+Published funnels put 1 deal per 50 *dials* far outside even the optimistic
+bound; a realistic range is 1 per 200-600 dials. **1 deal per 50 actual
+conversations is achievable**, and that is the number worth targeting. The
+distinction matters for expectations: dials-to-contact runs 10-15%, and
+reported experience is that deals typically come from the third through
+fifth touch, not the first. Scoring decides *who* to call and in what order;
+it does not change the arithmetic of how many dials that takes.
+
+**These weights are still not fitted to conversion data.** They are now
+informed by external research and validated against this catalog's actual
+data, but no deal has closed through this pipeline yet. Record outcomes with
+`manage_leads.py` and revisit them once there is a real funnel to fit
+against.
 
 ## Local lead archives
 
