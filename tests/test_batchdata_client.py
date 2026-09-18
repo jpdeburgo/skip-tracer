@@ -3,6 +3,7 @@ from skip_tracer.batchdata_client import (
     flag_low_margin,
     max_allowable_offer,
     payoff_profit_estimate,
+    rank_properties_by_profit,
 )
 
 
@@ -66,3 +67,42 @@ def test_payoff_profit_estimate_negative_when_debt_exceeds_arv():
         arv_estimate=300_000, total_lien_balance=280_000, repair_cost=40_000
     )
     assert profit == -20_000.0
+
+
+def test_rank_properties_by_profit_sorts_descending_and_annotates():
+    properties = [
+        {
+            "_id": "low-profit",
+            "valuation": {"estimatedValue": 300_000},
+            "openLien": {"totalOpenLienBalance": 280_000},
+        },
+        {
+            "_id": "high-profit",
+            "valuation": {"estimatedValue": 500_000},
+            "openLien": {"totalOpenLienBalance": 100_000},
+        },
+        {
+            "_id": "missing-data",
+            "valuation": {},
+            "openLien": {},
+        },
+    ]
+
+    ranked = rank_properties_by_profit(properties)
+
+    assert [p["_id"] for p in ranked] == ["high-profit", "low-profit", "missing-data"]
+    assert ranked[0]["_estimated_profit"] == 400_000.0
+    assert ranked[1]["_estimated_profit"] == 20_000.0
+    assert ranked[2]["_estimated_profit"] is None
+
+
+def test_rank_properties_by_profit_respects_top_n():
+    properties = [
+        {"_id": "a", "valuation": {"estimatedValue": 200_000}, "openLien": {"totalOpenLienBalance": 100_000}},
+        {"_id": "b", "valuation": {"estimatedValue": 400_000}, "openLien": {"totalOpenLienBalance": 100_000}},
+        {"_id": "c", "valuation": {"estimatedValue": 300_000}, "openLien": {"totalOpenLienBalance": 100_000}},
+    ]
+
+    ranked = rank_properties_by_profit(properties, top_n=2)
+
+    assert [p["_id"] for p in ranked] == ["b", "c"]

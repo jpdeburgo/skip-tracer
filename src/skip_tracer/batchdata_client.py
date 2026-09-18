@@ -238,3 +238,45 @@ def payoff_profit_estimate(
     number to actually offer.
     """
     return arv_estimate - total_lien_balance - repair_cost
+
+
+def rank_properties_by_profit(
+    properties: list[dict[str, Any]], top_n: int | None = None
+) -> list[dict[str, Any]]:
+    """Sorts raw property/search results (see
+    BatchDataClient.search_properties()) by estimated payoff profit —
+    valuation.estimatedValue minus openLien.totalOpenLienBalance — so a
+    bulk search response already paid for can be triaged for the most
+    promising candidates without any further billable calls.
+
+    No repair-cost estimate is available from a search result (that comes
+    from condition_tier(), which needs the permit history a per-address
+    lookup_valuation() call returns, not this bulk endpoint) — so this
+    reuses payoff_profit_estimate() with repair_cost=0, same rationale as
+    that function's own docstring: a prioritization signal, not a number
+    to actually offer. A property missing either estimatedValue or
+    totalOpenLienBalance is sorted last (unknown, not assumed zero-profit)
+    rather than dropped, since search results already cost money and
+    shouldn't quietly disappear from a review list.
+
+    Adds a `_estimated_profit` key (None if unknown) to each returned dict
+    so callers/scripts can see the number that was sorted on.
+    """
+
+    def _profit(prop: dict[str, Any]) -> float | None:
+        estimated_value = (prop.get("valuation") or {}).get("estimatedValue")
+        lien_balance = (prop.get("openLien") or {}).get("totalOpenLienBalance")
+        if estimated_value is None or lien_balance is None:
+            return None
+        return payoff_profit_estimate(estimated_value, lien_balance, 0.0)
+
+    ranked = []
+    for prop in properties:
+        annotated = dict(prop)
+        annotated["_estimated_profit"] = _profit(prop)
+        ranked.append(annotated)
+
+    ranked.sort(
+        key=lambda p: (p["_estimated_profit"] is None, -(p["_estimated_profit"] or 0))
+    )
+    return ranked[:top_n] if top_n is not None else ranked
