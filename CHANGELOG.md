@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.6.0 (2026-09-18)
+
+### Features
+
+- Release only on PR merge; qualified-leads archive; clearer valuation labels
+  ([#8](https://github.com/jpdeburgo/skip-tracer/pull/8),
+  [`79baae5`](https://github.com/jpdeburgo/skip-tracer/commit/79baae580b7974e4d1a0b82613e3b4e28317bb4a))
+
+
 ## v0.5.0 (2026-09-17)
 
 ### Features
