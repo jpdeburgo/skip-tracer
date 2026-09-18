@@ -1,0 +1,15 @@
+{
+  "error": "400 Client Error: Bad Request for url: https://api.batchdata.com/api/v1/property/search",
+  "request": {
+    "search_criteria": {
+      "county": "Montgomery",
+      "quickLists": {
+        "preforeclosure": true
+      },
+      "state": "MD"
+    },
+    "skip": 0,
+    "take": 5
+  },
+  "response": null
+}

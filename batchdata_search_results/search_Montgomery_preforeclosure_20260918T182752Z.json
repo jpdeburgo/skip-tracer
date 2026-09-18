@@ -1,0 +1,2779 @@
+{
+  "error": null,
+  "error_body": null,
+  "request": {
+    "search_criteria": {
+      "county": "Montgomery",
+      "quickLists": [
+        "preforeclosure"
+      ],
+      "state": "MD"
+    },
+    "skip": 0,
+    "take": 5
+  },
+  "response": {
+    "results": {
+      "meta": {
+        "apiVersion": "6.94.0",
+        "performance": {
+          "endTime": "2026-09-18T18:27:52.100Z",
+          "startTime": "2026-09-18T18:27:52.032Z",
+          "totalRequestTime": 68
+        },
+        "requestId": "01M2TWCR23WN9SGEJTGTSS084R",
+        "results": {
+          "resultCount": 5,
+          "resultsFound": 279621
+        }
+      },
+      "properties": [
+        {
+          "_id": "6fcd75dc9b7b44b9a17483d833319f3c",
+          "address": {
+            "addressValidity": "Valid",
+            "city": "Oklahoma City",
+            "county": "Oklahoma",
+            "countyFipsCode": "40109",
+            "hash": "31a18e89c7a878b57f6beeb674e226de",
+            "houseNumber": "7836",
+            "latitude": 35.603713,
+            "longitude": -97.653066,
+            "state": "OK",
+            "street": "7836 NW 131st St",
+            "zip": "73142",
+            "zipPlus4": "6200"
+          },
+          "building": {
+            "bathroomCount": 3,
+            "bedroomCount": 4,
+            "livingAreaSquareFeet": 3972,
+            "storyCount": 2,
+            "totalBuildingAreaSquareFeet": 3972,
+            "yearBuilt": 2006
+          },
+          "deedHistory": [
+            {
+              "buyers": [
+                "BRIDGEPORT DEVELOPMENT GROUP LLC"
+              ],
+              "documentDate": "2005-12-28T00:00:00.000Z",
+              "documentNumber": "2006.1111",
+              "documentType": "Individual Deed",
+              "documentTypeCode": "AP",
+              "mailingAddress": {
+                "city": "Oklahoma City",
+                "hash": "1696c09a2de6c40e24036cc70248ed00",
+                "state": "OK",
+                "street": "4101 Perimeter Center Dr Ste 350",
+                "zip": "73112"
+              },
+              "ownerRelationshipType": "CO",
+              "recordingBook": "9973",
+              "recordingDate": "2006-01-04T00:00:00.000Z",
+              "recordingPage": "614",
+              "resale": true,
+              "saleDate": "2005-12-28T00:00:00.000Z",
+              "salePrice": 48000,
+              "salePriceCode": "13",
+              "sellers": [
+                "DULANEY MEYER LLC"
+              ],
+              "transactionId": "1199900032",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 7200
+            },
+            {
+              "buyers": [
+                "ZANK STEVEN S"
+              ],
+              "documentDate": "2006-06-28T00:00:00.000Z",
+              "documentNumber": "2006099837",
+              "documentType": "Individual Deed",
+              "documentTypeCode": "AP",
+              "mailingAddress": {
+                "city": "Oklahoma City",
+                "hash": "879f5c946286d628fd8db2b43a7b8327",
+                "state": "OK",
+                "street": "4101 Perimeter Center Dr Ste 300",
+                "zip": "73112"
+              },
+              "newConstruction": true,
+              "ownerRelationshipType": "MM",
+              "recordingBook": "10165",
+              "recordingDate": "2006-07-03T00:00:00.000Z",
+              "recordingPage": "0486",
+              "saleDate": "2006-06-28T00:00:00.000Z",
+              "salePrice": 547500,
+              "salePriceCode": "13",
+              "sellers": [
+                "BRIDGEPORT DEVELOPMENT GROUP LLC"
+              ],
+              "transactionId": "1139630484",
+              "transactionType": "New construction residential transactions",
+              "transactionTypeCode": "C",
+              "transferTax": 82125
+            },
+            {
+              "buyers": [
+                "SS ZANK OKC TRUST 2011"
+              ],
+              "documentDate": "2011-07-20T00:00:00.000Z",
+              "documentNumber": "20111003011233000",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "mailingAddress": {
+                "city": "La Jolla",
+                "hash": "b7cbeb45254600635751b5848eb66d21",
+                "state": "CA",
+                "street": "PO Box 2555",
+                "zip": "92038"
+              },
+              "ownerRelationshipType": "CO",
+              "recordingBook": "11738",
+              "recordingDate": "2011-10-03T00:00:00.000Z",
+              "recordingPage": "1772",
+              "saleDate": "2011-07-20T00:00:00.000Z",
+              "salePrice": 0,
+              "salePriceCode": "10",
+              "sellers": [
+                "ZANK STEVEN S"
+              ],
+              "transactionId": "1139630485",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A",
+              "transferTax": 0
+            },
+            {
+              "buyers": [
+                "SS ZANK OKC TRUST 2011"
+              ],
+              "documentDate": "2019-11-04T00:00:00.000Z",
+              "documentNumber": "20191112011624740",
+              "documentType": "Intra-Family Transfer",
+              "documentTypeCode": "AQ",
+              "interFamily": true,
+              "mailingAddress": {
+                "city": "Oklahoma City",
+                "hash": "31a18e89c7a878b57f6beeb674e226de",
+                "state": "OK",
+                "street": "7836 NW 131st St",
+                "zip": "73142"
+              },
+              "ownerRelationshipType": "TT",
+              "recordingBook": "14184",
+              "recordingDate": "2019-11-12T00:00:00.000Z",
+              "recordingPage": "0179",
+              "saleDate": "2019-11-04T00:00:00.000Z",
+              "salePrice": 0,
+              "salePriceCode": "10",
+              "sellers": [
+                "ZANK STEVEN S",
+                "ZANK INGRID"
+              ],
+              "transactionId": "11678333789",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A",
+              "transferTax": 0
+            },
+            {
+              "buyers": [
+                "ZANK STEVEN S"
+              ],
+              "documentDate": "2019-11-04T00:00:00.000Z",
+              "documentNumber": "20191112011624750",
+              "documentType": "Quit Claim Deed",
+              "documentTypeCode": "BF",
+              "mailingAddress": {
+                "city": "Oklahoma City",
+                "hash": "31a18e89c7a878b57f6beeb674e226de",
+                "state": "OK",
+                "street": "7836 NW 131st St",
+                "zip": "73142"
+              },
+              "ownerRelationshipType": "MP",
+              "recordingBook": "14184",
+              "recordingDate": "2019-11-12T00:00:00.000Z",
+              "recordingPage": "0181",
+              "saleDate": "2019-11-04T00:00:00.000Z",
+              "salePrice": 0,
+              "salePriceCode": "10",
+              "sellers": [
+                "ZANK OKC TRUST 2011"
+              ],
+              "transactionId": "11678343132",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A",
+              "transferTax": 0
+            },
+            {
+              "buyers": [
+                "HARRISON JERALD D",
+                "PACKER HALEY"
+              ],
+              "documentDate": "2021-09-18T00:00:00.000Z",
+              "documentNumber": "2021.1173900",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "mailingAddress": {
+                "city": "Oklahoma City",
+                "hash": "31a18e89c7a878b57f6beeb674e226de",
+                "state": "OK",
+                "street": "7836 NW 131st St",
+                "zip": "73142"
+              },
+              "ownerRelationshipType": "HW",
+              "recordingBook": "14917",
+              "recordingDate": "2021-10-04T00:00:00.000Z",
+              "recordingPage": "902",
+              "resale": true,
+              "saleDate": "2021-09-18T00:00:00.000Z",
+              "salePrice": 550000,
+              "salePriceCode": "7",
+              "sellers": [
+                "ZANK STEVEN S",
+                "ZANK INGRID A"
+              ],
+              "transactionId": "11858739866",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 82500
+            }
+          ],
+          "demographics": {
+            "age": 52,
+            "discretionaryIncome": 87750,
+            "estimatedAreaCreditRating": "B",
+            "gender": "Male",
+            "genderCode": "M",
+            "homeownerRenter": "Home Owner",
+            "homeownerRenterCode": "O",
+            "householdSize": 2,
+            "income": 242000,
+            "individualEducation": "Attended College",
+            "individualEducationCode": "E",
+            "individualOccupation": "Other",
+            "individualOccupationCode": "Z",
+            "investments": [
+              "Real Estate",
+              "Investment Properties"
+            ],
+            "netWorth": 1409000,
+            "petOwner": true,
+            "recentlyMovedMonth": 6,
+            "recentlyMovedYear": 2024,
+            "religious": true,
+            "religiousAffiliation": "Catholic",
+            "religiousAffiliationCode": "C"
+          },
+          "foreclosure": {
+            "auctionDate": "1900-01-01T00:00:00.000Z",
+            "bookNumber": "16481",
+            "borrowerName": "Harrison Jerald L",
+            "caseNumber": "CJ-2026-3773",
+            "currentLenderName": "Canyon Lakes Homeowners Association Inc",
+            "documentNumber": "2026051501071571",
+            "documentType": "Notice of Lis Pendens",
+            "documentTypeCode": "O",
+            "filingDate": "2026-05-15T00:00:00.000Z",
+            "flag": "Y",
+            "pageNumber": "1172",
+            "recordingDate": "2026-05-15T00:00:00.000Z",
+            "status": "Notice of Lis Pendens",
+            "statusCode": "H",
+            "trusteeAddress": "3233 E Memorial Rd Ste 103",
+            "trusteeName": "Winton Law",
+            "trusteePhone": "4054784818"
+          },
+          "general": {
+            "propertyTypeCategory": "Residential",
+            "propertyTypeDetail": "Single Family",
+            "standardizedLandUseCode": "R2",
+            "vacant": false
+          },
+          "ids": {
+            "apn": "206451220"
+          },
+          "intel": {
+            "salePropensity": 90,
+            "salePropensityCategory": "High",
+            "salePropensityStatus": "Available"
+          },
+          "involuntaryLien": {
+            "liens": [
+              {
+                "bookNumber": "16481",
+                "documentNumber": "20260515010715710",
+                "documentType": "Lis Pendens",
+                "documentTypeCode": "CF",
+                "filingDate": "2026-04-27T00:00:00.000Z",
+                "lienType": "Other",
+                "lienTypeCode": "A",
+                "pageNumber": "1172",
+                "recordingDate": "2026-05-15T00:00:00.000Z"
+              }
+            ]
+          },
+          "legal": {
+            "subdivisionName": "CANYON LAKES 1ST"
+          },
+          "listing": {
+            "appliances": [
+              "Dryer",
+              "Washer"
+            ],
+            "bathroomCount": 3,
+            "bedroomCount": 5,
+            "coolingTypes": [
+              "Other"
+            ],
+            "exteriorConstruction": "Frame",
+            "failedListingDate": "2023-11-14T00:00:00.000Z",
+            "fullBathroomCount": 3,
+            "halfBathroomCount": 1,
+            "heatingTypes": [
+              "Forced air",
+              "Electric",
+              "Gas"
+            ],
+            "listingUrl": "https://www.zillow.com/homedetails/7836-NW-131st-St-Oklahoma-City-OK-73142/69166281_zpid/",
+            "livingArea": 4750,
+            "lotSizeSquareFeet": 100187,
+            "maxListPrice": 750000,
+            "maxListPriceDate": "2021-10-06T00:00:00.000Z",
+            "minListPrice": 3395,
+            "minListPriceDate": "2020-04-07T00:00:00.000Z",
+            "originalListingDate": "2023-11-14T00:00:00.000Z",
+            "parkingSpaceCount": 0,
+            "price": 4500,
+            "propertyType": "SINGLE_FAMILY",
+            "rental": true,
+            "roofTypes": [
+              "Composition"
+            ],
+            "salePriceIsEstimated": false,
+            "soldDate": "2006-06-28T00:00:00.000Z",
+            "soldPrice": 547450,
+            "status": "Off Market",
+            "statusCategory": "Failed",
+            "statusUpdatedAt": "2023-11-14T00:00:00.000Z",
+            "taxes": [
+              {
+                "amount": 9292.86,
+                "year": 2025
+              },
+              {
+                "amount": 8960.48,
+                "year": 2024
+              },
+              {
+                "amount": 8561.8,
+                "year": 2023
+              },
+              {
+                "amount": 7944.52,
+                "year": 2022
+              },
+              {
+                "amount": 7890.09,
+                "year": 2021
+              },
+              {
+                "amount": 7950.06,
+                "year": 2020
+              },
+              {
+                "amount": 5402.62,
+                "year": 2019
+              },
+              {
+                "amount": 5149.78,
+                "year": 2018
+              },
+              {
+                "amount": 7818.98,
+                "year": 2017
+              },
+              {
+                "amount": 7818.98,
+                "year": 2016
+              },
+              {
+                "amount": 8256.77,
+                "year": 2015
+              },
+              {
+                "amount": 8106.77,
+                "year": 2014
+              },
+              {
+                "year": 2013
+              },
+              {
+                "year": 2012
+              },
+              {
+                "year": 2011
+              },
+              {
+                "year": 2010
+              },
+              {
+                "year": 2009
+              },
+              {
+                "year": 2008
+              },
+              {
+                "year": 2007
+              },
+              {
+                "year": 2006
+              }
+            ],
+            "yearBuilt": 2006
+          },
+          "lot": {
+            "lotSizeAcres": 0.322,
+            "lotSizeSquareFeet": 14026
+          },
+          "mortgageHistory": [
+            {
+              "borrowers": [
+                "ZANK STEVEN S",
+                "ZANK INGRID"
+              ],
+              "documentDate": "2011-04-30T00:00:00.000Z",
+              "dueDate": "2041-05-01T00:00:00.000Z",
+              "interestRate": 4,
+              "interestRateType": "Fixed Rate",
+              "interestRateTypeCode": "C",
+              "lenderName": "CITIMORTGAGE INC",
+              "loanAmount": 359950,
+              "loanTermMonths": 360,
+              "loanType": "New Conventional",
+              "loanTypeCode": "U",
+              "recordingDate": "2011-05-04T00:00:00.000Z",
+              "saleDate": "2011-04-30T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            }
+          ],
+          "openLien": {
+            "allLoanTypes": [
+              "New Conventional"
+            ],
+            "firstLoanRecordingDate": "2021-10-04T00:00:00.000Z",
+            "lastLoanRecordingDate": "2021-10-04T00:00:00.000Z",
+            "mortgages": [
+              {
+                "assignedLenderName": "ARC HOME LLC",
+                "cashPurchase": false,
+                "constructionLoan": false,
+                "currentEstimatedBalance": 416957,
+                "currentEstimatedInterestRate": 2.8,
+                "dueDate": "2051-10-01T00:00:00.000Z",
+                "equityCreditLine": false,
+                "estimatedPaymentAmount": 1920,
+                "financingType": "Fixed Rate Override",
+                "financingTypeCode": "J",
+                "lenderName": "ARC HOME LLC",
+                "lenderType": "Mortgage Company",
+                "lenderTypeCode": "A",
+                "loanAmount": 467500,
+                "loanTermMonths": 360,
+                "loanType": "New Conventional",
+                "loanTypeCode": "U",
+                "ltv": 64.7747,
+                "purposeOfLoan": "15",
+                "recordingDate": "2021-10-04T00:00:00.000Z",
+                "standaloneRefi": "0"
+              }
+            ],
+            "totalOpenLienBalance": 416957,
+            "totalOpenLienCount": 1
+          },
+          "owner": {
+            "fullName": "Jerald D Harrison; Hailey L Harrison",
+            "mailingAddress": {
+              "addressValidity": "Valid",
+              "city": "Tulsa",
+              "county": "Tulsa",
+              "deliveryPointCode": "115",
+              "dpvFootnotes": "AABB",
+              "dpvMatchCode": "Y",
+              "hash": "0791180acc4ce689cf0ad677c103f342",
+              "state": "OK",
+              "street": "11911 S Kingston Ave",
+              "zip": "74137",
+              "zipPlus4": "7770"
+            },
+            "names": [
+              {
+                "first": "Jerald",
+                "full": "Jerald D Harrison",
+                "last": "Harrison",
+                "middle": "D"
+              },
+              {
+                "first": "Hailey",
+                "full": "Hailey L Harrison",
+                "last": "Harrison",
+                "middle": "L"
+              }
+            ],
+            "ownerOccupied": false,
+            "ownerStatusType": "Individual"
+          },
+          "permit": {},
+          "propertyOwnerProfile": {
+            "averageAssessedValue": 62729,
+            "averagePurchasePrice": 675000,
+            "averageYearBuilt": 2007,
+            "mortgagesAverageBalance": 548479,
+            "mortgagesCount": 2,
+            "mortgagesTotalBalance": 1096957,
+            "propertiesCount": 2,
+            "propertiesTotalEquity": 648898,
+            "propertiesTotalEstimatedValue": 1745855,
+            "totalPurchasePrice": 1350000
+          },
+          "quickLists": {
+            "absenteeOwner": true,
+            "absenteeOwnerInState": true,
+            "absenteeOwnerOutOfState": false,
+            "activeAuction": false,
+            "activeListing": false,
+            "canceledListing": false,
+            "cashBuyer": false,
+            "corporateOwned": false,
+            "expiredListing": false,
+            "failedListing": true,
+            "fixAndFlip": false,
+            "forSaleByOwner": false,
+            "freeAndClear": false,
+            "hasHoa": true,
+            "hasHoaFees": true,
+            "highEquity": true,
+            "inherited": false,
+            "involuntaryLien": true,
+            "listedBelowMarketPrice": true,
+            "lowEquity": false,
+            "mailingAddressVacant": false,
+            "noticeOfDefault": false,
+            "noticeOfLisPendens": true,
+            "noticeOfSale": false,
+            "onMarket": false,
+            "outOfStateOwner": false,
+            "ownerOccupied": false,
+            "pendingListing": false,
+            "preforeclosure": true,
+            "recentlySold": false,
+            "samePropertyAndMailingAddress": false,
+            "seniorOwner": false,
+            "taxDefault": false,
+            "tiredLandlord": false,
+            "trustOwned": false,
+            "unknownEquity": false,
+            "vacant": false,
+            "vacantLot": false
+          },
+          "sale": {
+            "flipLength": 0,
+            "lastSale": {
+              "mortgages": [
+                {
+                  "bookNumber": null,
+                  "documentNumber": "2021100401173901",
+                  "dueDate": "2051-10-01T00:00:00.000Z",
+                  "financingType": null,
+                  "financingTypeCode": null,
+                  "interestRate": 2.8,
+                  "lenderName": "ARC HOME LLC",
+                  "loanAmount": 467500,
+                  "loanTerm": "360",
+                  "loanType": "New Conventional",
+                  "loanTypeCode": "U",
+                  "pageNumber": null,
+                  "recordingDate": "2021-10-04T00:00:00.000Z"
+                }
+              ],
+              "price": 550000,
+              "pricePerSquareFoot": 138,
+              "saleDate": "2021-09-18T00:00:00.000Z"
+            },
+            "priorSale": {
+              "mortgages": [
+                {
+                  "bookNumber": "10165",
+                  "documentNumber": "2006099908",
+                  "dueDate": "2036-07-01T00:00:00.000Z",
+                  "financingType": null,
+                  "financingTypeCode": null,
+                  "interestRate": 6.67,
+                  "lenderName": "BRIDGEPORT LENDING LLC",
+                  "loanAmount": 369450,
+                  "loanTerm": "360",
+                  "loanType": "Purchase Money Mortgage",
+                  "loanTypeCode": "W",
+                  "pageNumber": "0765",
+                  "recordingDate": "2006-07-03T00:00:00.000Z"
+                }
+              ]
+            }
+          },
+          "valuation": {
+            "asOfDate": "2026-09-17T00:00:00.000Z",
+            "confidenceScore": 76,
+            "equityCurrentEstimatedBalance": 322043,
+            "equityPercent": 43.6,
+            "estimatedValue": 739000,
+            "ltv": 56.4,
+            "priceRangeMax": 849850,
+            "priceRangeMin": 628150,
+            "standardDeviation": 8
+          }
+        },
+        {
+          "_id": "48b6ff04afa50e98e7aec361d87c425b",
+          "address": {
+            "addressValidity": "Valid",
+            "city": "Hollywood",
+            "county": "Broward",
+            "countyFipsCode": "12011",
+            "hash": "364eb70f3fdb1080ff2973937efe835b",
+            "houseNumber": "1404",
+            "latitude": 26.000423,
+            "longitude": -80.134905,
+            "state": "FL",
+            "street": "1404 Plunkett St",
+            "zip": "33020",
+            "zipPlus4": "6432"
+          },
+          "building": {
+            "bathroomCount": 2,
+            "bedroomCount": 3,
+            "livingAreaSquareFeet": 1437,
+            "storyCount": 1,
+            "totalBuildingAreaSquareFeet": 1437,
+            "yearBuilt": 1949
+          },
+          "deedHistory": [
+            {
+              "documentDate": "1982-10-01T00:00:00.000Z",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "ownerRelationshipType": "NP",
+              "recordingBook": "10480",
+              "recordingDate": "1982-10-01T00:00:00.000Z",
+              "recordingPage": "69",
+              "resale": true,
+              "saleDate": "1982-10-01T00:00:00.000Z",
+              "salePrice": 42429,
+              "salePriceCode": "7",
+              "transactionId": "1128104916",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 29700
+            },
+            {
+              "buyers": [
+                "CENATIEMPO SHARI"
+              ],
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "mailingAddress": {
+                "city": "Hollywood",
+                "hash": "364eb70f3fdb1080ff2973937efe835b",
+                "state": "FL",
+                "street": "1404 Plunkett St",
+                "zip": "33020"
+              },
+              "recordingBook": "29369",
+              "recordingDate": "1999-04-08T00:00:00.000Z",
+              "recordingPage": "00342",
+              "resale": true,
+              "salePrice": 120000,
+              "salePriceCode": "14",
+              "sellers": [
+                "GARY AND DAYNA J GOODMAN"
+              ],
+              "transactionId": "1128104919",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 84000
+            },
+            {
+              "buyers": [
+                "PHILBRICK WALTER F"
+              ],
+              "documentDate": "2005-05-23T00:00:00.000Z",
+              "documentNumber": "105087924",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "mailingAddress": {
+                "city": "Hollywood",
+                "hash": "364eb70f3fdb1080ff2973937efe835b",
+                "state": "FL",
+                "street": "1404 Plunkett St",
+                "zip": "33020"
+              },
+              "ownerRelationshipType": "SM",
+              "recordingBook": "39841",
+              "recordingDate": "2005-06-14T00:00:00.000Z",
+              "recordingPage": "0029",
+              "resale": true,
+              "saleDate": "2005-05-23T00:00:00.000Z",
+              "salePrice": 300100,
+              "salePriceCode": "7",
+              "sellers": [
+                "CENATIEMPO SHARI"
+              ],
+              "transactionId": "1128104917",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 210070
+            },
+            {
+              "buyers": [
+                "PATEL GIRISH T",
+                "PATEL NITILA G"
+              ],
+              "documentDate": "2007-07-26T00:00:00.000Z",
+              "documentNumber": "107281782",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "mailingAddress": {
+                "city": "Gaithersburg",
+                "hash": "65006f5e8da60b22a4afb0427906bed1",
+                "state": "MD",
+                "street": "2 Triple Crown Ct",
+                "zip": "20878"
+              },
+              "ownerRelationshipType": "HW",
+              "recordingBook": "44444",
+              "recordingDate": "2007-08-08T00:00:00.000Z",
+              "recordingPage": "1099",
+              "resale": true,
+              "saleDate": "2007-07-26T00:00:00.000Z",
+              "salePrice": 390000,
+              "salePriceCode": "7",
+              "sellers": [
+                "PHILBRICK WALTER F"
+              ],
+              "transactionId": "1128104918",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 273000
+            },
+            {
+              "buyers": [
+                "BLEIER YOSEF"
+              ],
+              "documentDate": "2021-05-12T00:00:00.000Z",
+              "documentNumber": "2021.117280624",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "mailingAddress": {
+                "city": "Hollywood",
+                "hash": "364eb70f3fdb1080ff2973937efe835b",
+                "state": "FL",
+                "street": "1404 Plunkett St",
+                "zip": "33020"
+              },
+              "ownerRelationshipType": "MM",
+              "recordingDate": "2021-05-18T00:00:00.000Z",
+              "resale": true,
+              "saleDate": "2021-05-12T00:00:00.000Z",
+              "salePrice": 449000,
+              "salePriceCode": "14",
+              "sellers": [
+                "PATEL GIRISH T",
+                "PATEL NITILA G"
+              ],
+              "transactionId": "11835512087",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 314300
+            },
+            {
+              "buyers": [
+                "BLEIER SHLOMO",
+                "BLEIER MIRIAM"
+              ],
+              "documentDate": "2022-02-25T00:00:00.000Z",
+              "documentNumber": "2022.117963271",
+              "documentType": "Quit Claim Deed",
+              "documentTypeCode": "BF",
+              "mailingAddress": {
+                "city": "Hollywood",
+                "hash": "364eb70f3fdb1080ff2973937efe835b",
+                "state": "FL",
+                "street": "1404 Plunkett St",
+                "zip": "33020"
+              },
+              "ownerRelationshipType": "HW",
+              "recordingDate": "2022-02-25T00:00:00.000Z",
+              "saleDate": "2022-02-25T00:00:00.000Z",
+              "salePrice": 0,
+              "salePriceCode": "14",
+              "sellers": [
+                "BLEIER YOSEF"
+              ],
+              "transactionId": "11880096488",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A"
+            },
+            {
+              "buyers": [
+                "BLEIER YOSEF"
+              ],
+              "documentDate": "2025-06-24T00:00:00.000Z",
+              "documentNumber": "2025.120291595",
+              "documentType": "Quit Claim Deed",
+              "documentTypeCode": "BF",
+              "mailingAddress": {
+                "city": "North Miami Beach",
+                "hash": "87a2004f031d3334d67c36426b579583",
+                "state": "FL",
+                "street": "17201 Collins Ave Apt 507",
+                "zip": "33160"
+              },
+              "recordingDate": "2025-06-25T00:00:00.000Z",
+              "saleDate": "2025-06-24T00:00:00.000Z",
+              "salePrice": 0,
+              "salePriceCode": "14",
+              "sellers": [
+                "BLEIER SHLOMO",
+                "BLEIER MIRIAM"
+              ],
+              "transactionId": "11967953842",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A"
+            }
+          ],
+          "demographics": {
+            "discretionaryIncome": 66500,
+            "estimatedAreaCreditRating": "C",
+            "homeownerRenter": "Home Owner",
+            "homeownerRenterCode": "O",
+            "householdSize": 1,
+            "income": 171000,
+            "maritalStatus": "Married",
+            "maritalStatusCode": "M",
+            "netWorth": 88000,
+            "religious": false
+          },
+          "foreclosure": {
+            "filingDate": "2026-02-09T00:00:00.000Z",
+            "flag": "Y",
+            "recordingDate": "2026-02-09T00:00:00.000Z",
+            "status": "Notice of Default",
+            "statusCode": "G"
+          },
+          "general": {
+            "propertyTypeCategory": "Residential",
+            "propertyTypeDetail": "Single Family",
+            "standardizedLandUseCode": "R2",
+            "vacant": false
+          },
+          "ids": {
+            "apn": "51-42-22-27-0900"
+          },
+          "intel": {
+            "salePropensity": 92.1,
+            "salePropensityCategory": "High",
+            "salePropensityStatus": "Available"
+          },
+          "involuntaryLien": {
+            "liens": [
+              {
+                "documentNumber": "121004437",
+                "documentType": "Judgment",
+                "documentTypeCode": "BH",
+                "judgementAmount": 17093,
+                "lienType": "Economic Lien",
+                "lienTypeCode": "B",
+                "recordingDate": "2026-07-24T00:00:00.000Z"
+              }
+            ]
+          },
+          "legal": {
+            "subdivisionName": "SUNSET TRAILS NO 4 24-34 B"
+          },
+          "listing": {
+            "appliances": [
+              "Dishwasher",
+              "Freezer",
+              "Garbage Disposal",
+              "Microwave Oven",
+              "Oven",
+              "Range",
+              "Refrigerator",
+              "Washer",
+              "dryer"
+            ],
+            "bathroomCount": 2,
+            "bedroomCount": 3,
+            "coolingTypes": [
+              "Air Conditioner"
+            ],
+            "failedListingDate": "2026-08-15T00:00:00.000Z",
+            "fullBathroomCount": 2,
+            "listingProviderId": "Zillow Rentals",
+            "listingUrl": "https://www.zillow.com/homedetails/1404-Plunkett-St-Hollywood-FL-33020/43345866_zpid/",
+            "livingArea": 1437,
+            "lotSizeSquareFeet": 8276,
+            "maxListPrice": 590000,
+            "maxListPriceDate": "2026-01-06T00:00:00.000Z",
+            "minListPrice": 2495,
+            "minListPriceDate": "2025-08-01T00:00:00.000Z",
+            "originalListingDate": "2026-08-01T00:00:00.000Z",
+            "parkingSpaceCount": 0,
+            "price": 3299,
+            "propertyType": "SINGLE_FAMILY",
+            "rental": true,
+            "salePriceIsEstimated": false,
+            "soldDate": "2021-05-18T00:00:00.000Z",
+            "status": "Off Market",
+            "statusCategory": "Failed",
+            "statusUpdatedAt": "2026-08-15T00:00:00.000Z",
+            "taxes": [
+              {
+                "amount": 13642.32,
+                "year": 2025
+              },
+              {
+                "amount": 14914.99,
+                "year": 2024
+              },
+              {
+                "amount": 13896.27,
+                "year": 2023
+              },
+              {
+                "amount": 10886.28,
+                "year": 2022
+              },
+              {
+                "amount": 7072.24,
+                "year": 2021
+              },
+              {
+                "amount": 7035.44,
+                "year": 2020
+              },
+              {
+                "amount": 6579.72,
+                "year": 2019
+              },
+              {
+                "amount": 6579.72,
+                "year": 2018
+              },
+              {
+                "amount": 6818.04,
+                "year": 2017
+              },
+              {
+                "amount": 6166.78,
+                "year": 2016
+              },
+              {
+                "amount": 5721.38,
+                "year": 2015
+              },
+              {
+                "amount": 4868.6,
+                "year": 2014
+              },
+              {
+                "amount": 4868.6,
+                "year": 2013
+              },
+              {
+                "amount": 3991.17,
+                "year": 2012
+              },
+              {
+                "amount": 4033.59,
+                "year": 2011
+              },
+              {
+                "amount": 4608.45,
+                "year": 2010
+              },
+              {
+                "amount": 6303.22,
+                "year": 2009
+              },
+              {
+                "amount": 6789.12,
+                "year": 2008
+              },
+              {
+                "amount": 7290.6,
+                "year": 2007
+              },
+              {
+                "amount": 7524.65,
+                "year": 2006
+              },
+              {
+                "year": 2005
+              },
+              {
+                "amount": 3071.26,
+                "year": 2004
+              },
+              {
+                "amount": 3055.45,
+                "year": 2003
+              },
+              {
+                "amount": 3299.15,
+                "year": 2002
+              },
+              {
+                "amount": 2999.85,
+                "year": 2001
+              },
+              {
+                "amount": 2706.14,
+                "year": 2000
+              }
+            ],
+            "yearBuilt": 1949
+          },
+          "lot": {
+            "lotSizeAcres": 0.191,
+            "lotSizeSquareFeet": 8312
+          },
+          "mortgageHistory": [
+            {
+              "borrowers": [
+                "CENATIEMPO SHARI"
+              ],
+              "documentDate": "2003-08-26T00:00:00.000Z",
+              "dueDate": "2033-09-01T00:00:00.000Z",
+              "interestRate": 6.75,
+              "interestRateType": "Adjustable Rate",
+              "interestRateTypeCode": "A",
+              "lenderName": "ACCREDITED HOME LENDERS INC",
+              "loanAmount": 192000,
+              "loanTermMonths": 360,
+              "loanType": "Unknown (DEFAULT)",
+              "loanTypeCode": "AH",
+              "recordingDate": "2003-09-05T00:00:00.000Z",
+              "saleDate": "2003-08-26T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            },
+            {
+              "borrowers": [
+                "PATEL GIRISH T",
+                "PATEL NITILA G"
+              ],
+              "documentDate": "2012-07-24T00:00:00.000Z",
+              "dueDate": "2042-08-01T00:00:00.000Z",
+              "interestRate": 3.68,
+              "lenderName": "JPMORGAN CHASE BANK NA",
+              "loanAmount": 301780,
+              "loanTermMonths": 360,
+              "loanType": "New Conventional",
+              "loanTypeCode": "U",
+              "recordingDate": "2012-07-27T00:00:00.000Z",
+              "saleDate": "2012-07-24T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            },
+            {
+              "borrowers": [
+                "PATEL GIRISH T",
+                "PATEL NITILA G"
+              ],
+              "documentDate": "2012-07-24T00:00:00.000Z",
+              "dueDate": "2042-08-01T00:00:00.000Z",
+              "interestRate": 3.68,
+              "lenderName": "JPMORGAN CHASE BANK NA",
+              "loanAmount": 301780,
+              "loanTermMonths": 314,
+              "loanType": "New Conventional",
+              "loanTypeCode": "U",
+              "recordingDate": "2016-05-16T00:00:00.000Z",
+              "saleDate": "2012-07-24T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            },
+            {
+              "borrowers": [
+                "BLEIER SHLOMO",
+                "BLEIER MIRIAM"
+              ],
+              "documentDate": "2023-07-27T00:00:00.000Z",
+              "dueDate": "2025-07-31T00:00:00.000Z",
+              "interestRate": 6.71,
+              "lenderName": "CARMEL RICHARD",
+              "loanAmount": 300000,
+              "loanTermMonths": 24,
+              "loanType": "Balloon",
+              "loanTypeCode": "E",
+              "recordingDate": "2023-07-28T00:00:00.000Z",
+              "saleDate": "2023-07-27T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            }
+          ],
+          "openLien": {
+            "allLoanTypes": [
+              "Commercial"
+            ],
+            "firstLoanRecordingDate": "2025-06-25T00:00:00.000Z",
+            "lastLoanRecordingDate": "2025-06-25T00:00:00.000Z",
+            "mortgages": [
+              {
+                "assignedLenderName": "THE RANDY S ROSE REVOCABLE TRUST",
+                "cashPurchase": false,
+                "constructionLoan": false,
+                "currentEstimatedBalance": 503600,
+                "currentEstimatedInterestRate": 6.76,
+                "dueDate": "2027-06-30T00:00:00.000Z",
+                "equityCreditLine": false,
+                "estimatedPaymentAmount": 47343,
+                "lenderName": "THE RANDY S ROSE REVOCABLE TRUST",
+                "lenderType": "Private Party (individual)",
+                "lenderTypeCode": "I",
+                "loanAmount": 1060000,
+                "loanTermMonths": 24,
+                "loanType": "Commercial",
+                "loanTypeCode": "I",
+                "ltv": 86.0222,
+                "purposeOfLoan": "01",
+                "recordingDate": "2025-06-25T00:00:00.000Z",
+                "standaloneRefi": "0"
+              }
+            ],
+            "totalOpenLienBalance": 503600,
+            "totalOpenLienCount": 1
+          },
+          "owner": {
+            "fullName": "Yosef Bleier",
+            "mailingAddress": {
+              "addressValidity": "Valid",
+              "city": "North Miami Beach",
+              "county": "Miami-Dade",
+              "deliveryPointCode": "322",
+              "dpvFootnotes": "AABB",
+              "dpvMatchCode": "Y",
+              "hash": "87a2004f031d3334d67c36426b579583",
+              "state": "FL",
+              "street": "17201 Collins Ave Apt 507",
+              "zip": "33160",
+              "zipPlus4": "3476"
+            },
+            "names": [
+              {
+                "first": "Yosef",
+                "full": "Yosef Bleier",
+                "last": "Bleier"
+              }
+            ],
+            "ownerOccupied": false,
+            "ownerStatusType": "Individual"
+          },
+          "permit": {
+            "allTags": [
+              "Remodel"
+            ],
+            "earliestDate": "2025-10-16T00:00:00.000Z",
+            "latestDate": "2025-10-16T00:00:00.000Z",
+            "permitCount": 1,
+            "tags": {
+              "addition": false,
+              "adu": false,
+              "bathroom": false,
+              "battery": false,
+              "demolition": false,
+              "electricMeter": false,
+              "electrical": false,
+              "evCharger": false,
+              "fireSprinkler": false,
+              "gas": false,
+              "generator": false,
+              "grading": false,
+              "heatPump": false,
+              "hvac": false,
+              "inspectionPassed": false,
+              "kitchen": false,
+              "newConstruction": false,
+              "plumbing": false,
+              "poolAndHotTub": false,
+              "remodel": true,
+              "roofing": false,
+              "solar": false,
+              "waterHeater": false,
+              "windowDoor": false
+            },
+            "totalJobValue": 0
+          },
+          "propertyOwnerProfile": {
+            "averageAssessedValue": 889325,
+            "averagePurchasePrice": 609500,
+            "averageYearBuilt": 1978,
+            "mortgagesAverageBalance": 503600,
+            "mortgagesCount": 1,
+            "mortgagesTotalBalance": 503600,
+            "propertiesCount": 2,
+            "propertiesTotalEquity": 1556259,
+            "propertiesTotalEstimatedValue": 2059859,
+            "totalPurchasePrice": 1219000
+          },
+          "quickLists": {
+            "absenteeOwner": true,
+            "absenteeOwnerInState": true,
+            "absenteeOwnerOutOfState": false,
+            "activeAuction": false,
+            "activeListing": false,
+            "canceledListing": false,
+            "cashBuyer": true,
+            "corporateOwned": false,
+            "expiredListing": false,
+            "failedListing": true,
+            "fixAndFlip": false,
+            "forSaleByOwner": false,
+            "freeAndClear": false,
+            "hasHoa": false,
+            "hasHoaFees": false,
+            "highEquity": false,
+            "inherited": false,
+            "involuntaryLien": true,
+            "listedBelowMarketPrice": true,
+            "lowEquity": true,
+            "mailingAddressVacant": false,
+            "noticeOfDefault": true,
+            "noticeOfLisPendens": false,
+            "noticeOfSale": false,
+            "onMarket": false,
+            "outOfStateOwner": false,
+            "ownerOccupied": false,
+            "pendingListing": false,
+            "preforeclosure": true,
+            "recentlySold": false,
+            "samePropertyAndMailingAddress": false,
+            "seniorOwner": false,
+            "taxDefault": true,
+            "tiredLandlord": false,
+            "trustOwned": false,
+            "unknownEquity": false,
+            "vacant": false,
+            "vacantLot": false
+          },
+          "sale": {
+            "flipLength": 0,
+            "lastSale": {
+              "price": 449000,
+              "pricePerSquareFoot": 312,
+              "saleDate": "2021-05-12T00:00:00.000Z"
+            },
+            "priorSale": {
+              "mortgages": [
+                {
+                  "bookNumber": null,
+                  "documentNumber": "44444/01101",
+                  "dueDate": "2037-08-01T00:00:00.000Z",
+                  "financingType": null,
+                  "financingTypeCode": null,
+                  "interestRate": 6.63,
+                  "lenderName": "JPMORGAN CHASE BANK NA",
+                  "loanAmount": 312000,
+                  "loanTerm": "360",
+                  "loanType": "Purchase Money Mortgage",
+                  "loanTypeCode": "W",
+                  "pageNumber": null,
+                  "recordingDate": "2007-08-08T00:00:00.000Z"
+                }
+              ]
+            }
+          },
+          "valuation": {
+            "asOfDate": "2026-09-08T00:00:00.000Z",
+            "confidenceScore": 93,
+            "equityCurrentEstimatedBalance": 81830,
+            "equityPercent": 14,
+            "estimatedValue": 585430,
+            "ltv": 86,
+            "priceRangeMax": 673245,
+            "priceRangeMin": 497616,
+            "standardDeviation": 7
+          }
+        },
+        {
+          "_id": "38568050b2185e73b2bdf31090c97d2f",
+          "address": {
+            "addressValidity": "Valid",
+            "city": "New Carlisle",
+            "county": "Clark",
+            "countyFipsCode": "39023",
+            "hash": "c1005db1569f049ff324043b9482671d",
+            "houseNumber": "755",
+            "latitude": 39.925888,
+            "longitude": -84.030769,
+            "state": "OH",
+            "street": "755 N Dayton Lakeview Rd",
+            "zip": "45344",
+            "zipPlus4": "2116"
+          },
+          "building": {
+            "livingAreaSquareFeet": 5280,
+            "storyCount": 2,
+            "totalBuildingAreaSquareFeet": 2880,
+            "yearBuilt": 1996
+          },
+          "deedHistory": [
+            {
+              "buyers": [
+                "PACK HOLDINGS LLC"
+              ],
+              "documentDate": "2018-04-30T00:00:00.000Z",
+              "documentNumber": "2018.6390",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "mailingAddress": {
+                "city": "New Carlisle",
+                "hash": "c1005db1569f049ff324043b9482671d",
+                "state": "OH",
+                "street": "755 N Dayton Lakeview Rd",
+                "zip": "45344"
+              },
+              "ownerRelationshipType": "LC",
+              "recordingBook": "2143",
+              "recordingDate": "2018-05-15T00:00:00.000Z",
+              "recordingPage": "5562",
+              "resale": true,
+              "saleDate": "2018-04-30T00:00:00.000Z",
+              "salePrice": 1400000,
+              "salePriceCode": "14",
+              "sellers": [
+                "MEADON VIEW GROWERS INC"
+              ],
+              "transactionId": "11463349345",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 560000
+            }
+          ],
+          "demographics": {
+            "religious": false
+          },
+          "foreclosure": {
+            "auctionDate": "2026-07-10T00:00:00.000Z",
+            "auctionLocation": "Www. Auctionohio .com",
+            "auctionTime": "01:00",
+            "borrowerName": "Pack Holdings Llc",
+            "caseNumber": "24CV0730",
+            "currentLenderName": "The Huntington National Bank",
+            "defaultDate": "2025-09-17T00:00:00.000Z",
+            "documentType": "Notice of Default",
+            "documentTypeCode": "N",
+            "filingDate": "2026-06-25T00:00:00.000Z",
+            "flag": "Y",
+            "recordingDate": "2026-06-25T00:00:00.000Z",
+            "status": "Notice of Sale",
+            "statusCode": "C"
+          },
+          "general": {
+            "propertyTypeCategory": "Commercial",
+            "propertyTypeDetail": "Retail Stores",
+            "standardizedLandUseCode": "C2",
+            "vacant": true
+          },
+          "ids": {
+            "apn": "015-05-00034-400-027"
+          },
+          "intel": {
+            "salePropensityStatus": "Not Applicable"
+          },
+          "involuntaryLien": {},
+          "legal": {},
+          "listing": {},
+          "lot": {
+            "lotSizeAcres": 8.69,
+            "lotSizeSquareFeet": 378536
+          },
+          "mortgageHistory": [
+            {
+              "borrowers": [
+                "PACK HOLDINGS LLC"
+              ],
+              "documentDate": "2018-04-30T00:00:00.000Z",
+              "interestRate": 4.44,
+              "interestRateType": "Variable",
+              "interestRateTypeCode": "H",
+              "lenderName": "THE HUNTINGTON NATIONAL BANK",
+              "loanAmount": 3479000,
+              "loanTermMonths": 360,
+              "loanType": "Future Advance Clause / Open End Mortgage",
+              "loanTypeCode": "O",
+              "recordingDate": "2018-05-09T00:00:00.000Z",
+              "saleDate": "2018-04-30T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            }
+          ],
+          "openLien": {
+            "allLoanTypes": [
+              "Future Advance Clause / Open End Mortgage"
+            ],
+            "firstLoanRecordingDate": "2018-05-09T00:00:00.000Z",
+            "lastLoanRecordingDate": "2018-05-09T00:00:00.000Z",
+            "mortgages": [
+              {
+                "assignedLenderName": "THE HUNTINGTON NATIONAL BANK",
+                "cashPurchase": false,
+                "constructionLoan": false,
+                "currentEstimatedBalance": 3479000,
+                "currentEstimatedInterestRate": 3.67,
+                "equityCreditLine": false,
+                "financingType": "Variable",
+                "financingTypeCode": "H",
+                "lenderName": "THE HUNTINGTON NATIONAL BANK",
+                "lenderType": "Bank",
+                "lenderTypeCode": "B",
+                "loanAmount": 3479000,
+                "loanType": "Future Advance Clause / Open End Mortgage",
+                "loanTypeCode": "O",
+                "ltv": 661.5678,
+                "purposeOfLoan": "16",
+                "recordingDate": "2018-05-09T00:00:00.000Z",
+                "standaloneRefi": "0"
+              }
+            ],
+            "totalOpenLienBalance": 3479000,
+            "totalOpenLienCount": 1
+          },
+          "owner": {
+            "fullName": "PACK HOLDINGS LLC",
+            "mailingAddress": {
+              "addressValidity": "Valid",
+              "city": "New Carlisle",
+              "county": "Clark",
+              "deliveryPointCode": "550",
+              "dpvFootnotes": "AABB",
+              "dpvMatchCode": "Y",
+              "hash": "c1005db1569f049ff324043b9482671d",
+              "state": "OH",
+              "street": "755 N Dayton Lakeview Rd",
+              "zip": "45344",
+              "zipPlus4": "2116"
+            },
+            "names": [
+              {
+                "full": "PACK HOLDINGS LLC",
+                "last": "PACK HOLDINGS LLC"
+              }
+            ],
+            "ownerOccupied": true,
+            "ownerStatusType": "Company Owned"
+          },
+          "permit": {},
+          "propertyOwnerProfile": {
+            "averageAssessedValue": 164320,
+            "averagePurchasePrice": 1400000,
+            "averageYearBuilt": 1996,
+            "mortgagesAverageBalance": 3479000,
+            "mortgagesCount": 1,
+            "mortgagesTotalBalance": 3479000,
+            "propertiesCount": 1,
+            "propertiesTotalEquity": -2953128,
+            "propertiesTotalEstimatedValue": 525872,
+            "totalPurchasePrice": 1400000
+          },
+          "quickLists": {
+            "absenteeOwner": false,
+            "absenteeOwnerInState": false,
+            "absenteeOwnerOutOfState": false,
+            "activeAuction": false,
+            "activeListing": false,
+            "canceledListing": false,
+            "cashBuyer": false,
+            "corporateOwned": true,
+            "expiredListing": false,
+            "failedListing": false,
+            "fixAndFlip": false,
+            "forSaleByOwner": false,
+            "freeAndClear": false,
+            "hasHoa": false,
+            "hasHoaFees": false,
+            "highEquity": false,
+            "inherited": false,
+            "involuntaryLien": false,
+            "listedBelowMarketPrice": false,
+            "lowEquity": true,
+            "mailingAddressVacant": true,
+            "noticeOfDefault": false,
+            "noticeOfLisPendens": false,
+            "noticeOfSale": true,
+            "onMarket": false,
+            "outOfStateOwner": false,
+            "ownerOccupied": true,
+            "pendingListing": false,
+            "preforeclosure": true,
+            "recentlySold": false,
+            "samePropertyAndMailingAddress": true,
+            "seniorOwner": false,
+            "taxDefault": true,
+            "tiredLandlord": false,
+            "trustOwned": false,
+            "unknownEquity": false,
+            "vacant": true,
+            "vacantLot": false
+          },
+          "sale": {
+            "flipLength": 0,
+            "lastSale": {
+              "mortgages": [
+                {
+                  "bookNumber": null,
+                  "documentNumber": "201800006391",
+                  "dueDate": null,
+                  "financingType": "Variable",
+                  "financingTypeCode": "H",
+                  "interestRate": 4.44,
+                  "lenderName": "THE HUNTINGTON NATIONAL BANK",
+                  "loanAmount": 3479000,
+                  "loanTerm": "360",
+                  "loanType": "Future Advance Clause / Open End Mortgage",
+                  "loanTypeCode": "O",
+                  "pageNumber": null,
+                  "recordingDate": "2018-05-15T00:00:00.000Z"
+                }
+              ],
+              "price": 1400000,
+              "pricePerSquareFoot": 486,
+              "saleDate": "2018-04-30T00:00:00.000Z"
+            }
+          },
+          "valuation": {
+            "asOfDate": "2026-09-08T00:00:00.000Z",
+            "confidenceScore": 70,
+            "equityCurrentEstimatedBalance": -2953128,
+            "equityPercent": -561.6,
+            "estimatedValue": 525872,
+            "ltv": 661.6,
+            "priceRangeMax": 604753,
+            "priceRangeMin": 446991,
+            "standardDeviation": 30
+          }
+        },
+        {
+          "_id": "55c41602b44403bef7995c44b0e1e19d",
+          "address": {
+            "addressValidity": "Valid",
+            "city": "Boca Raton",
+            "county": "Palm Beach",
+            "countyFipsCode": "12099",
+            "hash": "4c4a1d2733c47029249d8fa78cb71ec5",
+            "houseNumber": "21157",
+            "latitude": 26.362504,
+            "longitude": -80.158299,
+            "state": "FL",
+            "street": "21157 Ormond Ct",
+            "zip": "33433",
+            "zipPlus4": "7430"
+          },
+          "building": {
+            "bathroomCount": 6,
+            "bedroomCount": 4,
+            "livingAreaSquareFeet": 8056,
+            "pool": "Pool - Yes",
+            "storyCount": 2,
+            "totalBuildingAreaSquareFeet": 8056,
+            "yearBuilt": 1986
+          },
+          "deedHistory": [
+            {
+              "buyers": [
+                "EUROLAND EST LTD"
+              ],
+              "documentDate": "1993-11-17T00:00:00.000Z",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "recordingBook": "07992",
+              "recordingDate": "1993-11-23T00:00:00.000Z",
+              "recordingPage": "01453",
+              "saleDate": "1993-11-17T00:00:00.000Z",
+              "salePrice": 975000,
+              "salePriceCode": "14",
+              "sellers": [
+                "SHAY BERNARD C",
+                "SHAY ERIKA IRENE"
+              ],
+              "transactionId": "1070173020",
+              "transactionType": "Insured non-residential grant deeds",
+              "transactionTypeCode": "E",
+              "transferTax": 682500
+            },
+            {
+              "buyers": [
+                "GOLDBERG SHELLEY ROSLY"
+              ],
+              "documentDate": "2003-07-04T00:00:00.000Z",
+              "documentNumber": "20030582974",
+              "documentType": "Quit Claim Deed",
+              "documentTypeCode": "BF",
+              "mailingAddress": {
+                "city": "Boca Raton",
+                "hash": "4c4a1d2733c47029249d8fa78cb71ec5",
+                "state": "FL",
+                "street": "21157 Ormond Ct",
+                "zip": "33433"
+              },
+              "ownerRelationshipType": "ID",
+              "recordingBook": "15921",
+              "recordingDate": "2003-09-29T00:00:00.000Z",
+              "recordingPage": "1939",
+              "saleDate": "2003-07-04T00:00:00.000Z",
+              "salePrice": 445185,
+              "salePriceCode": "7",
+              "sellers": [
+                "EUROLAND ESTATTES LTD"
+              ],
+              "transactionId": "1070173022",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A",
+              "transferTax": 311640
+            },
+            {
+              "buyers": [
+                "GOLDBERG MARTIN LESLIE"
+              ],
+              "documentDate": "2006-04-04T00:00:00.000Z",
+              "documentNumber": "20060196157",
+              "documentType": "Intra-Family Transfer",
+              "documentTypeCode": "AQ",
+              "interFamily": true,
+              "mailingAddress": {
+                "city": "Boca Raton",
+                "hash": "4c4a1d2733c47029249d8fa78cb71ec5",
+                "state": "FL",
+                "street": "21157 Ormond Ct",
+                "zip": "33433"
+              },
+              "ownerRelationshipType": "HW",
+              "recordingBook": "20148",
+              "recordingDate": "2006-04-04T00:00:00.000Z",
+              "recordingPage": "0169",
+              "saleDate": "2006-04-04T00:00:00.000Z",
+              "salePrice": 0,
+              "sellers": [
+                "GOLDBERG SHELLEY ROSLYN"
+              ],
+              "transactionId": "1070173019",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A",
+              "transferTax": 70
+            },
+            {
+              "buyers": [
+                "CHRISTIANA TRUST"
+              ],
+              "documentDate": "2014-02-06T00:00:00.000Z",
+              "documentNumber": "20140045846",
+              "documentType": "Trustee's Deed (Certificate of Title)",
+              "documentTypeCode": "BX",
+              "foreclosure": true,
+              "mailingAddress": {
+                "city": "Orlando",
+                "hash": "fb02597ab5b0a42078ae928aa47447a5",
+                "state": "FL",
+                "street": "3191 Maguire Blvd Ste 257",
+                "zip": "32803"
+              },
+              "ownerRelationshipType": "BE",
+              "recordingBook": "26601",
+              "recordingDate": "2014-02-07T00:00:00.000Z",
+              "recordingPage": "1352",
+              "saleDate": "2014-02-06T00:00:00.000Z",
+              "salePrice": 0,
+              "sellers": [
+                "GOLDBERG SHELLEY R",
+                "BOCA GROVE PLANTATION PROPERT OWNERS ASS"
+              ],
+              "transactionId": "1070173021",
+              "transactionType": "REO and trustee deeds",
+              "transactionTypeCode": "D",
+              "transferTax": 70
+            },
+            {
+              "buyers": [
+                "WILMINGTON SAVINGS FUND SOCIETY",
+                "CHRISTIANA TRUST"
+              ],
+              "documentDate": "2017-06-27T00:00:00.000Z",
+              "documentNumber": "2017.249740",
+              "documentType": "Special Warranty Deed",
+              "documentTypeCode": "BQ",
+              "mailingAddress": {
+                "city": "Houston",
+                "hash": "198f8a418a1e997b4a5bb94836ecbef6",
+                "state": "TX",
+                "street": "9990 Richmond Ave Ste 400",
+                "zip": "77042"
+              },
+              "ownerRelationshipType": "TR",
+              "recordingBook": "29214",
+              "recordingDate": "2017-07-12T00:00:00.000Z",
+              "recordingPage": "220",
+              "saleDate": "2017-06-27T00:00:00.000Z",
+              "salePrice": 0,
+              "salePriceCode": "11",
+              "sellers": [
+                "CHRISTINA TRUST"
+              ],
+              "transactionId": "1590029078",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A",
+              "transferTax": 0
+            },
+            {
+              "buyers": [
+                "THE TRUST OF NECHAMA PEREZ LLC"
+              ],
+              "documentDate": "2018-06-29T00:00:00.000Z",
+              "documentNumber": "20180259005",
+              "documentType": "Special Warranty Deed",
+              "documentTypeCode": "BQ",
+              "mailingAddress": {
+                "city": "Elizabeth",
+                "hash": "2da06cc24d5852a90b96d9d42b08f4d2",
+                "state": "NJ",
+                "street": "71 Summit Rd",
+                "zip": "07208"
+              },
+              "ownerRelationshipType": "LC",
+              "recordingBook": "29968",
+              "recordingDate": "2018-07-03T00:00:00.000Z",
+              "recordingPage": "0599",
+              "reoSale": true,
+              "resale": true,
+              "saleDate": "2018-06-29T00:00:00.000Z",
+              "salePrice": 780000,
+              "salePriceCode": "14",
+              "sellers": [
+                "WILMINGTON SAVINGS FUND SOCIETY FSB",
+                "NORMANDY MORTGAGE LOAN TRUST"
+              ],
+              "transactionId": "11481777148",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 546000
+            },
+            {
+              "buyers": [
+                "PEREZ NECHAMA"
+              ],
+              "documentDate": "2022-05-09T00:00:00.000Z",
+              "documentNumber": "2022.211338",
+              "documentType": "Quit Claim Deed",
+              "documentTypeCode": "BF",
+              "mailingAddress": {
+                "city": "Boca Raton",
+                "hash": "4c4a1d2733c47029249d8fa78cb71ec5",
+                "state": "FL",
+                "street": "21157 Ormond Ct",
+                "zip": "33433"
+              },
+              "ownerRelationshipType": "MA",
+              "recordingBook": "33560",
+              "recordingDate": "2022-05-16T00:00:00.000Z",
+              "recordingPage": "484",
+              "saleDate": "2022-05-09T00:00:00.000Z",
+              "salePrice": 0,
+              "salePriceCode": "14",
+              "sellers": [
+                "TRUST OF NECHAMA PEREZ LLC"
+              ],
+              "transactionId": "11888437630",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A"
+            },
+            {
+              "buyers": [
+                "TRUST OF NECHAMA PEREZ LLC"
+              ],
+              "documentDate": "2023-07-24T00:00:00.000Z",
+              "documentNumber": "2023.253936",
+              "documentType": "Quit Claim Deed",
+              "documentTypeCode": "BF",
+              "mailingAddress": {
+                "city": "Boca Raton",
+                "hash": "18556f3a48192e0423c92ea8ea38ce28",
+                "state": "FL",
+                "street": "21168 La Vista Cir",
+                "zip": "33428"
+              },
+              "recordingDate": "2023-07-25T00:00:00.000Z",
+              "saleDate": "2023-07-24T00:00:00.000Z",
+              "salePrice": 0,
+              "salePriceCode": "14",
+              "sellers": [
+                "SHEMESH NECHAMA"
+              ],
+              "transactionId": "11910778671",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A"
+            }
+          ],
+          "demographics": {
+            "discretionaryIncome": 337500,
+            "estimatedAreaCreditRating": "E",
+            "gender": "Female",
+            "genderCode": "F",
+            "homeownerRenter": "Home Owner",
+            "homeownerRenterCode": "O",
+            "householdSize": 1,
+            "income": 1283000,
+            "millionaire": true,
+            "netWorth": 10000,
+            "recentlyMoved": true,
+            "recentlyMovedMonth": 9,
+            "recentlyMovedYear": 2025,
+            "religious": true,
+            "religiousAffiliation": "Default",
+            "religiousAffiliationCode": "X"
+          },
+          "foreclosure": {
+            "bookNumber": "36730",
+            "borrowerName": "Perez Nechama",
+            "caseNumber": "502026CA009052XXXAMB",
+            "defaultDate": "2026-08-11T00:00:00.000Z",
+            "documentNumber": "299735",
+            "documentType": "Notice of Lis Pendens",
+            "documentTypeCode": "O",
+            "filingDate": "2026-08-18T00:00:00.000Z",
+            "flag": "Y",
+            "pageNumber": "1192",
+            "recordingDate": "2026-08-18T00:00:00.000Z",
+            "status": "Notice of Lis Pendens",
+            "statusCode": "H",
+            "trusteeName": "Wilmington Trust National Association"
+          },
+          "general": {
+            "propertyTypeCategory": "Residential",
+            "propertyTypeDetail": "Single Family",
+            "standardizedLandUseCode": "R2",
+            "vacant": false
+          },
+          "ids": {
+            "apn": "00-42-47-16-15-000-0440"
+          },
+          "intel": {
+            "salePropensity": 81.9,
+            "salePropensityCategory": "Medium",
+            "salePropensityStatus": "Available"
+          },
+          "involuntaryLien": {
+            "liens": [
+              {
+                "bookNumber": "36183",
+                "documentNumber": "20250435410",
+                "documentType": "Lis Pendens Release",
+                "documentTypeCode": "CO",
+                "filingDate": "2025-12-08T00:00:00.000Z",
+                "lienType": "Other",
+                "lienTypeCode": "A",
+                "pageNumber": "1840",
+                "parties": [
+                  {
+                    "fullName": "TRUST OF NECHAMA PEREZ LLC",
+                    "roleType": "PLAINTIFF"
+                  }
+                ],
+                "recordingDate": "2025-12-10T00:00:00.000Z"
+              }
+            ]
+          },
+          "legal": {
+            "subdivisionName": "BOCA GROVE PLANTATION"
+          },
+          "listing": {
+            "appliances": [
+              "Dishwasher",
+              "Dryer",
+              "Garbage disposal",
+              "Microwave",
+              "Range / Oven",
+              "Refrigerator",
+              "Washer"
+            ],
+            "bathroomCount": 6,
+            "bedroomCount": 4,
+            "coolingTypes": [
+              "Central"
+            ],
+            "exteriorConstruction": "masonry",
+            "failedListingDate": "2025-05-23T00:00:00.000Z",
+            "fullBathroomCount": 6,
+            "halfBathroomCount": 1,
+            "heatingTypes": [
+              "Forced air",
+              "Electric"
+            ],
+            "listingUrl": "https://www.zillow.com/homedetails/21157-Ormond-Ct-Boca-Raton-FL-33433/46646149_zpid/",
+            "livingArea": 8888,
+            "lotSizeSquareFeet": 8276,
+            "maxListPrice": 4500000,
+            "maxListPriceDate": "2025-05-23T00:00:00.000Z",
+            "minListPrice": 8950,
+            "minListPriceDate": "2020-05-12T00:00:00.000Z",
+            "newConstruction": false,
+            "originalListingDate": "2024-10-17T00:00:00.000Z",
+            "parkingSpaceCount": 3,
+            "price": 4500000,
+            "propertyType": "Single Family",
+            "rental": false,
+            "roofTypes": [
+              "Tile"
+            ],
+            "salePriceIsEstimated": false,
+            "soldDate": "2018-06-29T00:00:00.000Z",
+            "soldPrice": 780000,
+            "status": "Off Market",
+            "statusCategory": "Failed",
+            "statusUpdatedAt": "2024-10-17T00:00:00.000Z",
+            "taxes": [
+              {
+                "amount": 33412,
+                "year": 2024
+              },
+              {
+                "amount": 21582,
+                "year": 2023
+              },
+              {
+                "amount": 16381,
+                "year": 2022
+              },
+              {
+                "amount": 13908,
+                "year": 2021
+              },
+              {
+                "amount": 15556.51,
+                "year": 2020
+              },
+              {
+                "amount": 15228.79,
+                "year": 2019
+              },
+              {
+                "amount": 15228.79,
+                "year": 2018
+              },
+              {
+                "amount": 14271.32,
+                "year": 2017
+              },
+              {
+                "amount": 14603,
+                "year": 2016
+              },
+              {
+                "amount": 16871.81,
+                "year": 2015
+              },
+              {
+                "amount": 18182.48,
+                "year": 2014
+              },
+              {
+                "amount": 17956.65,
+                "year": 2013
+              },
+              {
+                "amount": 18534.7,
+                "year": 2012
+              },
+              {
+                "amount": 18810.3,
+                "year": 2011
+              },
+              {
+                "amount": 21394.3,
+                "year": 2010
+              },
+              {
+                "amount": 20000,
+                "year": 2009
+              },
+              {
+                "amount": 17826.9,
+                "year": 2008
+              },
+              {
+                "amount": 14895,
+                "year": 2007
+              },
+              {
+                "amount": 15787.4,
+                "year": 2006
+              },
+              {
+                "year": 2005
+              },
+              {
+                "amount": 8339.96,
+                "year": 2004
+              },
+              {
+                "amount": 235.05,
+                "year": 2003
+              },
+              {
+                "amount": 18417.5,
+                "year": 2002
+              },
+              {
+                "amount": 17647.9,
+                "year": 2001
+              },
+              {
+                "amount": 16317.4,
+                "year": 2000
+              },
+              {
+                "amount": 16658.4,
+                "year": 1999
+              }
+            ],
+            "totalBuildingAreaSquareFeet": 8888,
+            "yearBuilt": 1986
+          },
+          "lot": {
+            "lotSizeAcres": 0.416,
+            "lotSizeSquareFeet": 18117
+          },
+          "mortgageHistory": [
+            {
+              "borrowers": [
+                "EUROLAND ESTATES LTD"
+              ],
+              "dueDate": "2007-04-17T00:00:00.000Z",
+              "interestRate": 7.16,
+              "lenderName": "JANETTE UREN VINER",
+              "loanAmount": 137038,
+              "loanTermMonths": 60,
+              "loanType": "Unknown (DEFAULT)",
+              "loanTypeCode": "AH",
+              "recordingDate": "2002-05-03T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            },
+            {
+              "borrowers": [
+                "GOLDBERG MARTIN",
+                "GOLDBERG SHELLEY R"
+              ],
+              "documentDate": "2004-06-17T00:00:00.000Z",
+              "dueDate": "2034-07-01T00:00:00.000Z",
+              "interestRate": 6.25,
+              "lenderName": "FIRST MAGNUS FINANCIAL CORP",
+              "loanAmount": 650000,
+              "loanTermMonths": 360,
+              "loanType": "Unknown (DEFAULT)",
+              "loanTypeCode": "AH",
+              "recordingDate": "2004-07-02T00:00:00.000Z",
+              "saleDate": "2004-06-17T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            },
+            {
+              "borrowers": [
+                "GOLDBERG MARTIN LESLIE",
+                "GOLDBERG SHELLEY R"
+              ],
+              "documentDate": "2006-07-11T00:00:00.000Z",
+              "dueDate": "2036-08-01T00:00:00.000Z",
+              "interestRate": 6.87,
+              "interestRateType": "Adjustable Rate",
+              "interestRateTypeCode": "A",
+              "lenderName": "SUNTRUST MORTGAGE INC",
+              "loanAmount": 995000,
+              "loanTermMonths": 360,
+              "loanType": "Building or Construction Loan",
+              "loanTypeCode": "F",
+              "recordingDate": "2006-07-26T00:00:00.000Z",
+              "saleDate": "2006-07-11T00:00:00.000Z",
+              "transactionType": "Construction loans both purchase money and non-purchase money loans",
+              "transactionTypeCode": "I"
+            },
+            {
+              "borrowers": [
+                "TRUST OF NECHAMA PEREZ LLC"
+              ],
+              "documentDate": "2020-02-10T00:00:00.000Z",
+              "interestRate": 3.6,
+              "lenderName": "DLP LENDING FUND LLC",
+              "loanAmount": 106785,
+              "loanTermMonths": 360,
+              "loanType": "Commercial",
+              "loanTypeCode": "I",
+              "recordingDate": "2020-02-14T00:00:00.000Z",
+              "saleDate": "2020-02-10T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            },
+            {
+              "borrowers": [
+                "TRUST OF NECHAMA PEREZ LLC"
+              ],
+              "interestRate": 2.9,
+              "lenderName": "PRIDE FUNDING LLC",
+              "loanAmount": 2020662,
+              "loanType": "Credit Line (Revolving)",
+              "loanTypeCode": "K",
+              "recordingDate": "2021-06-08T00:00:00.000Z",
+              "transactionType": "HELOCS - both purchase money and non-purchase money HELOCS",
+              "transactionTypeCode": "F"
+            },
+            {
+              "borrowers": [
+                "TRUST OF NECHAMA PEREZ LLC"
+              ],
+              "interestRate": 2.93,
+              "lenderName": "PRIDE FUNDING LLC",
+              "loanAmount": 70550,
+              "loanType": "Credit Line (Revolving)",
+              "loanTypeCode": "K",
+              "recordingDate": "2021-07-29T00:00:00.000Z",
+              "transactionType": "HELOCS - both purchase money and non-purchase money HELOCS",
+              "transactionTypeCode": "F"
+            },
+            {
+              "borrowers": [
+                "TRUST OF NECHAMA PEREZ LLC",
+                "PEREZ"
+              ],
+              "documentDate": "2025-11-26T00:00:00.000Z",
+              "dueDate": "2026-02-28T00:00:00.000Z",
+              "interestRate": 6.17,
+              "lenderName": "YCA GROUP LLC",
+              "loanAmount": 355000,
+              "loanTermMonths": 2,
+              "loanType": "Building or Construction Loan",
+              "loanTypeCode": "F",
+              "recordingDate": "2025-12-11T00:00:00.000Z",
+              "saleDate": "2025-11-26T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            }
+          ],
+          "openLien": {
+            "allLoanTypes": [
+              "New Conventional"
+            ],
+            "firstLoanRecordingDate": "2022-05-16T00:00:00.000Z",
+            "lastLoanRecordingDate": "2022-05-16T00:00:00.000Z",
+            "mortgages": [
+              {
+                "assignedLenderName": "HYPOTEC INC",
+                "cashPurchase": false,
+                "constructionLoan": false,
+                "currentEstimatedBalance": 2590531,
+                "currentEstimatedInterestRate": 4.42,
+                "dueDate": "2052-06-01T00:00:00.000Z",
+                "equityCreditLine": false,
+                "estimatedPaymentAmount": 14054,
+                "financingType": "Fixed Rate Override",
+                "financingTypeCode": "J",
+                "lenderName": "HYPOTEC INC",
+                "lenderType": "Other (company or corporation)",
+                "lenderTypeCode": "E",
+                "loanAmount": 2800000,
+                "loanTermMonths": 360,
+                "loanType": "New Conventional",
+                "loanTypeCode": "U",
+                "ltv": 81.8957,
+                "purposeOfLoan": "08",
+                "recordingDate": "2022-05-16T00:00:00.000Z",
+                "standaloneRefi": "0"
+              }
+            ],
+            "totalOpenLienBalance": 2590531,
+            "totalOpenLienCount": 1
+          },
+          "owner": {
+            "fullName": "TRUST OF NECHAMA PEREZ LLC",
+            "mailingAddress": {
+              "addressValidity": "Valid",
+              "city": "Boca Raton",
+              "county": "Palm Beach",
+              "deliveryPointCode": "684",
+              "dpvFootnotes": "AABB",
+              "dpvMatchCode": "Y",
+              "hash": "18556f3a48192e0423c92ea8ea38ce28",
+              "state": "FL",
+              "street": "21168 La Vista Cir",
+              "zip": "33428",
+              "zipPlus4": "3531"
+            },
+            "names": [
+              {
+                "full": "TRUST OF NECHAMA PEREZ LLC",
+                "last": "TRUST OF NECHAMA PEREZ LLC"
+              }
+            ],
+            "ownerOccupied": false,
+            "ownerStatusType": "Company Owned"
+          },
+          "permit": {},
+          "propertyOwnerProfile": {
+            "averageAssessedValue": 1365101,
+            "averagePurchasePrice": 697283,
+            "averageYearBuilt": 1994,
+            "mortgagesAverageBalance": 963993,
+            "mortgagesCount": 3,
+            "mortgagesTotalBalance": 2891980,
+            "propertiesCount": 3,
+            "propertiesTotalEquity": 2957114,
+            "propertiesTotalEstimatedValue": 5849094,
+            "totalPurchasePrice": 2091850
+          },
+          "quickLists": {
+            "absenteeOwner": true,
+            "absenteeOwnerInState": true,
+            "absenteeOwnerOutOfState": false,
+            "activeAuction": false,
+            "activeListing": false,
+            "canceledListing": false,
+            "cashBuyer": false,
+            "corporateOwned": true,
+            "expiredListing": false,
+            "failedListing": true,
+            "fixAndFlip": false,
+            "forSaleByOwner": false,
+            "freeAndClear": false,
+            "hasHoa": true,
+            "hasHoaFees": true,
+            "highEquity": false,
+            "inherited": false,
+            "involuntaryLien": true,
+            "listedBelowMarketPrice": false,
+            "lowEquity": true,
+            "mailingAddressVacant": false,
+            "noticeOfDefault": false,
+            "noticeOfLisPendens": true,
+            "noticeOfSale": false,
+            "onMarket": false,
+            "outOfStateOwner": false,
+            "ownerOccupied": false,
+            "pendingListing": false,
+            "preforeclosure": true,
+            "recentlySold": false,
+            "samePropertyAndMailingAddress": false,
+            "seniorOwner": false,
+            "taxDefault": false,
+            "tiredLandlord": false,
+            "trustOwned": false,
+            "unknownEquity": false,
+            "vacant": false,
+            "vacantLot": false
+          },
+          "sale": {
+            "flipLength": 0,
+            "lastSale": {
+              "mortgages": [
+                {
+                  "bookNumber": null,
+                  "documentNumber": "20180259006",
+                  "dueDate": "2033-07-30T00:00:00.000Z",
+                  "financingType": null,
+                  "financingTypeCode": null,
+                  "interestRate": 4.6,
+                  "lenderName": "JACOM SAMRA ETAL",
+                  "loanAmount": 550000,
+                  "loanTerm": "180",
+                  "loanType": "Commercial",
+                  "loanTypeCode": "I",
+                  "pageNumber": null,
+                  "recordingDate": "2018-07-03T00:00:00.000Z"
+                }
+              ],
+              "price": 780000,
+              "pricePerSquareFoot": 97,
+              "saleDate": "2018-06-29T00:00:00.000Z"
+            }
+          },
+          "valuation": {
+            "asOfDate": "2026-09-17T00:00:00.000Z",
+            "confidenceScore": 70,
+            "equityCurrentEstimatedBalance": 572675,
+            "equityPercent": 18.1,
+            "estimatedValue": 3163206,
+            "ltv": 81.9,
+            "priceRangeMax": 3637687,
+            "priceRangeMin": 2688725,
+            "standardDeviation": 30
+          }
+        },
+        {
+          "_id": "b6839fa465cdcb387fdda34b84292fe8",
+          "address": {
+            "addressValidity": "Valid",
+            "city": "Loxahatchee",
+            "county": "Palm Beach",
+            "countyFipsCode": "12099",
+            "hash": "2d6ac7aeddb96be8b56a05c08d7ce1b4",
+            "houseNumber": "16524",
+            "latitude": 26.80204,
+            "longitude": -80.303038,
+            "state": "FL",
+            "street": "16524 Valencia Blvd",
+            "zip": "33470",
+            "zipPlus4": "2715"
+          },
+          "building": {
+            "bathroomCount": 2,
+            "bedroomCount": 3,
+            "livingAreaSquareFeet": 1927,
+            "storyCount": 1,
+            "totalBuildingAreaSquareFeet": 1927,
+            "yearBuilt": 1991
+          },
+          "deedHistory": [
+            {
+              "buyers": [
+                "SANGPRASERT SUPPAVUT TONY"
+              ],
+              "documentDate": "2017-08-21T00:00:00.000Z",
+              "documentNumber": "20170308904",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "mailingAddress": {
+                "city": "Citra",
+                "hash": "c95252df9c9799544c5456363948b56d",
+                "state": "FL",
+                "street": "550 NE 168th St",
+                "zip": "32113"
+              },
+              "ownerRelationshipType": "MM",
+              "recordingBook": "29313",
+              "recordingDate": "2017-08-24T00:00:00.000Z",
+              "recordingPage": "0968",
+              "resale": true,
+              "saleDate": "2017-08-21T00:00:00.000Z",
+              "salePrice": 309000,
+              "salePriceCode": "7",
+              "sellers": [
+                "DIFONZO JOAN E"
+              ],
+              "transactionId": "1733548335",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 216300
+            },
+            {
+              "buyers": [
+                "LEE DONTRELLE"
+              ],
+              "documentDate": "2023-01-28T00:00:00.000Z",
+              "documentNumber": "2023.52868",
+              "documentType": "Warranty Deed",
+              "documentTypeCode": "BZ",
+              "mailingAddress": {
+                "city": "Loxahatchee",
+                "hash": "2d6ac7aeddb96be8b56a05c08d7ce1b4",
+                "state": "FL",
+                "street": "16524 Valencia Blvd",
+                "zip": "33470"
+              },
+              "ownerRelationshipType": "SM",
+              "recordingBook": "34126",
+              "recordingDate": "2023-02-16T00:00:00.000Z",
+              "recordingPage": "1218",
+              "resale": true,
+              "saleDate": "2023-01-28T00:00:00.000Z",
+              "salePrice": 515000,
+              "salePriceCode": "16",
+              "sellers": [
+                "TONY SANGPRASERT",
+                "TONY SUPPAVUT"
+              ],
+              "transactionId": "11902366327",
+              "transactionType": "Arms-length residential transactions (purchase/resales)",
+              "transactionTypeCode": "B",
+              "transferTax": 360500
+            },
+            {
+              "buyers": [
+                "LEE FAMILY TRUST"
+              ],
+              "documentDate": "2025-01-06T00:00:00.000Z",
+              "documentNumber": "2025.4579",
+              "documentType": "Quit Claim Deed",
+              "documentTypeCode": "BF",
+              "mailingAddress": {
+                "city": "West Palm Beach",
+                "hash": "b90464cdc8c4fe748e1b289f5066e90f",
+                "state": "FL",
+                "street": "2695 N Military Trl Ste 22",
+                "zip": "33409"
+              },
+              "recordingBook": "35477",
+              "recordingDate": "2025-01-06T00:00:00.000Z",
+              "recordingPage": "464",
+              "saleDate": "2025-01-06T00:00:00.000Z",
+              "salePrice": 0,
+              "salePriceCode": "14",
+              "sellers": [
+                "LEE DONTRELLE OMAR"
+              ],
+              "transactionId": "11942801933",
+              "transactionType": "Non-arms length transactions with valid title company name (no accomodations)",
+              "transactionTypeCode": "A"
+            }
+          ],
+          "demographics": {
+            "discretionaryIncome": 66500,
+            "estimatedAreaCreditRating": "E",
+            "gender": "Female",
+            "genderCode": "F",
+            "homeownerRenter": "Home Owner",
+            "homeownerRenterCode": "O",
+            "householdSize": 1,
+            "income": 176000,
+            "netWorth": 10000,
+            "recentlyMovedMonth": 6,
+            "recentlyMovedYear": 2025,
+            "religious": true,
+            "religiousAffiliation": "Default",
+            "religiousAffiliationCode": "X"
+          },
+          "foreclosure": {
+            "bookNumber": "36653",
+            "borrowerName": "Lee Dontrelle Omar",
+            "caseNumber": "502026CA007783XXXAMB",
+            "defaultDate": "2026-07-10T00:00:00.000Z",
+            "documentNumber": "253944",
+            "documentType": "Notice of Lis Pendens",
+            "documentTypeCode": "O",
+            "filingDate": "2026-07-14T00:00:00.000Z",
+            "flag": "Y",
+            "pageNumber": "445",
+            "recordingDate": "2026-07-14T00:00:00.000Z",
+            "status": "Notice of Lis Pendens",
+            "statusCode": "H",
+            "trusteeName": "Select Portfolio Servicing Inc"
+          },
+          "general": {
+            "propertyTypeCategory": "Residential",
+            "propertyTypeDetail": "Single Family",
+            "standardizedLandUseCode": "R2",
+            "vacant": false
+          },
+          "ids": {
+            "apn": "00-40-42-24-00-000-4310"
+          },
+          "intel": {
+            "salePropensity": 86.6,
+            "salePropensityCategory": "Medium",
+            "salePropensityStatus": "Available"
+          },
+          "involuntaryLien": {
+            "liens": [
+              {
+                "bookNumber": "36653",
+                "documentNumber": "20260253944",
+                "documentType": "Lis Pendens <Mortgage> Assignment",
+                "documentTypeCode": "CL",
+                "filingDate": "2026-07-10T00:00:00.000Z",
+                "lienType": "Other",
+                "lienTypeCode": "A",
+                "pageNumber": "445",
+                "recordingDate": "2026-07-14T00:00:00.000Z"
+              }
+            ]
+          },
+          "legal": {
+            "subdivisionName": "ACREAGE & UNREC"
+          },
+          "listing": {
+            "agentOffices": [
+              {
+                "officeAddress": "17220 Alexander Run Jupiter FL 33478-5276",
+                "officeCorporateName": "Veno Realty Group Llc"
+              }
+            ],
+            "agents": [
+              {
+                "email": "missyveno@gmail.com",
+                "name": "Missy Veno",
+                "primaryPhoneNumber": "5616445073",
+                "roles": [
+                  "Listing Agent"
+                ]
+              }
+            ],
+            "bathroomCount": 2,
+            "bedroomCount": 3,
+            "daysOnMarket": 26,
+            "lotSizeSquareFeet": 61855,
+            "originalListingDate": "2023-01-18T00:00:00.000Z",
+            "rental": false,
+            "salePriceIsEstimated": false,
+            "soldDate": "2023-02-13T00:00:00.000Z",
+            "soldPrice": 515000,
+            "status": "Sold",
+            "statusCategory": "Sold",
+            "yearBuilt": 1991
+          },
+          "lot": {
+            "lotSizeAcres": 1.418,
+            "lotSizeSquareFeet": 61772
+          },
+          "mortgageHistory": [
+            {
+              "borrowers": [
+                "DIFONZO JOAN E"
+              ],
+              "dueDate": "2033-02-01T00:00:00.000Z",
+              "interestRate": 5.98,
+              "lenderName": "CHASE MANHATTAN MORTGAGE CORP",
+              "loanAmount": 85000,
+              "loanTermMonths": 360,
+              "loanType": "Unknown (DEFAULT)",
+              "loanTypeCode": "AH",
+              "recordingDate": "2003-02-03T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            },
+            {
+              "borrowers": [
+                "DIFONZO JOAN E"
+              ],
+              "documentDate": "2006-05-22T00:00:00.000Z",
+              "dueDate": "2037-06-01T00:00:00.000Z",
+              "interestRate": 6.44,
+              "lenderName": "FIDELITY FEDERAL BANK & TRUST",
+              "loanAmount": 200000,
+              "loanTermMonths": 372,
+              "loanType": "Fannie Mae/Freddie Mac",
+              "loanTypeCode": "M",
+              "recordingDate": "2006-05-31T00:00:00.000Z",
+              "saleDate": "2006-05-22T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            },
+            {
+              "borrowers": [
+                "SANGPRASERT SUPPAVUT TONY",
+                "SANGPRASERT SUMALAI"
+              ],
+              "documentDate": "2020-11-23T00:00:00.000Z",
+              "dueDate": "2050-12-01T00:00:00.000Z",
+              "interestRate": 2.8,
+              "lenderName": "LAKEVIEW LOAN SERVICING LLC",
+              "loanAmount": 253825,
+              "loanTermMonths": 360,
+              "loanType": "VA",
+              "loanTypeCode": "AI",
+              "recordingDate": "2020-12-08T00:00:00.000Z",
+              "saleDate": "2020-11-23T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            },
+            {
+              "borrowers": [
+                "SANGPRASERT SUPPAVUT TONY",
+                "SANGPRASERT SUMALAI"
+              ],
+              "documentDate": "2021-09-28T00:00:00.000Z",
+              "dueDate": "2051-10-01T00:00:00.000Z",
+              "interestRate": 2.8,
+              "lenderName": "ROCKET MORTGAGE LLC",
+              "loanAmount": 328000,
+              "loanTermMonths": 360,
+              "loanType": "New Conventional",
+              "loanTypeCode": "U",
+              "recordingDate": "2021-10-12T00:00:00.000Z",
+              "saleDate": "2021-09-28T00:00:00.000Z",
+              "transactionType": "Refi loans and 2nd trust deeds (purchase and non-purchase money trust deeds)",
+              "transactionTypeCode": "G"
+            }
+          ],
+          "openLien": {
+            "allLoanTypes": [
+              "New Conventional"
+            ],
+            "firstLoanRecordingDate": "2023-02-16T00:00:00.000Z",
+            "lastLoanRecordingDate": "2023-02-16T00:00:00.000Z",
+            "mortgages": [
+              {
+                "assignedLenderName": "UNITED WHOLESALE MORTGAGE",
+                "cashPurchase": false,
+                "constructionLoan": false,
+                "currentEstimatedBalance": 468389,
+                "currentEstimatedInterestRate": 6.33,
+                "dueDate": "2053-03-01T00:00:00.000Z",
+                "equityCreditLine": false,
+                "estimatedPaymentAmount": 3037,
+                "financingType": "Fixed Rate Override",
+                "financingTypeCode": "J",
+                "lenderName": "UNITED WHOLESALE MORTGAGE",
+                "lenderType": "Mortgage Company",
+                "lenderTypeCode": "A",
+                "loanAmount": 489250,
+                "loanTermMonths": 360,
+                "loanType": "New Conventional",
+                "loanTypeCode": "U",
+                "ltv": 77.9929,
+                "purposeOfLoan": "15",
+                "recordingDate": "2023-02-16T00:00:00.000Z",
+                "standaloneRefi": "0"
+              }
+            ],
+            "totalOpenLienBalance": 468389,
+            "totalOpenLienCount": 1
+          },
+          "owner": {
+            "fullName": "LEE FAMILY TRUST",
+            "mailingAddress": {
+              "addressValidity": "Valid",
+              "city": "West Palm Beach",
+              "county": "Palm Beach",
+              "deliveryPointCode": "226",
+              "dpvFootnotes": "AABBR1",
+              "dpvMatchCode": "Y",
+              "hash": "b90464cdc8c4fe748e1b289f5066e90f",
+              "state": "FL",
+              "street": "2695 N Military Trl Ste 22",
+              "zip": "33409",
+              "zipPlus4": "2946"
+            },
+            "names": [
+              {
+                "full": "LEE FAMILY TRUST",
+                "last": "LEE FAMILY TRUST"
+              }
+            ],
+            "ownerOccupied": false,
+            "ownerStatusType": "Company Owned"
+          },
+          "permit": {},
+          "propertyOwnerProfile": {
+            "averageAssessedValue": 507915,
+            "averagePurchasePrice": 515000,
+            "averageYearBuilt": 1991,
+            "mortgagesAverageBalance": 468389,
+            "mortgagesCount": 1,
+            "mortgagesTotalBalance": 468389,
+            "propertiesCount": 1,
+            "propertiesTotalEquity": 132164,
+            "propertiesTotalEstimatedValue": 600553,
+            "totalPurchasePrice": 515000
+          },
+          "quickLists": {
+            "absenteeOwner": true,
+            "absenteeOwnerInState": true,
+            "absenteeOwnerOutOfState": false,
+            "activeAuction": false,
+            "activeListing": false,
+            "canceledListing": false,
+            "cashBuyer": false,
+            "corporateOwned": true,
+            "expiredListing": false,
+            "failedListing": false,
+            "fixAndFlip": false,
+            "forSaleByOwner": false,
+            "freeAndClear": false,
+            "hasHoa": true,
+            "hasHoaFees": true,
+            "highEquity": true,
+            "inherited": false,
+            "involuntaryLien": true,
+            "listedBelowMarketPrice": true,
+            "lowEquity": false,
+            "mailingAddressVacant": false,
+            "noticeOfDefault": false,
+            "noticeOfLisPendens": true,
+            "noticeOfSale": false,
+            "onMarket": false,
+            "outOfStateOwner": false,
+            "ownerOccupied": false,
+            "pendingListing": false,
+            "preforeclosure": true,
+            "recentlySold": false,
+            "samePropertyAndMailingAddress": false,
+            "seniorOwner": false,
+            "taxDefault": false,
+            "tiredLandlord": false,
+            "trustOwned": true,
+            "unknownEquity": false,
+            "vacant": false,
+            "vacantLot": false
+          },
+          "sale": {
+            "flipLength": 0,
+            "lastSale": {
+              "mortgages": [
+                {
+                  "bookNumber": null,
+                  "documentNumber": "2023.52869",
+                  "dueDate": "2053-03-01T00:00:00.000Z",
+                  "financingType": "Fixed Rate",
+                  "financingTypeCode": "C",
+                  "interestRate": 6.48,
+                  "lenderName": "UNITED WHOLESALE MORTGAGE LLC",
+                  "loanAmount": 489250,
+                  "loanTerm": "360",
+                  "loanType": "New Conventional",
+                  "loanTypeCode": "U",
+                  "pageNumber": null,
+                  "recordingDate": "2023-02-16T00:00:00.000Z"
+                }
+              ],
+              "price": 515000,
+              "pricePerSquareFoot": 267,
+              "saleDate": "2023-01-28T00:00:00.000Z"
+            },
+            "priorSale": {
+              "mortgages": [
+                {
+                  "bookNumber": "29313",
+                  "documentNumber": "20170308905",
+                  "dueDate": "2047-09-01T00:00:00.000Z",
+                  "financingType": null,
+                  "financingTypeCode": null,
+                  "interestRate": 3.96,
+                  "lenderName": "RP FUNDING INC",
+                  "loanAmount": 262000,
+                  "loanTerm": "360",
+                  "loanType": "VA",
+                  "loanTypeCode": "AI",
+                  "pageNumber": "0970",
+                  "recordingDate": "2017-08-24T00:00:00.000Z"
+                }
+              ]
+            }
+          },
+          "valuation": {
+            "asOfDate": "2026-09-08T00:00:00.000Z",
+            "confidenceScore": 91,
+            "equityCurrentEstimatedBalance": 132164,
+            "equityPercent": 22,
+            "estimatedValue": 600553,
+            "ltv": 78,
+            "priceRangeMax": 690636,
+            "priceRangeMin": 510470,
+            "standardDeviation": 9
+          }
+        }
+      ]
+    },
+    "status": {
+      "code": 200,
+      "text": "OK"
+    }
+  }
+}

@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.8.0 (2026-09-18)
+
+### Features
+
+- Add pre-foreclosure targeting mode ([#11](https://github.com/jpdeburgo/skip-tracer/pull/11),
+  [`969b632`](https://github.com/jpdeburgo/skip-tracer/commit/969b632fa9c3b54252ffe494c56700d85ff98289))
+
+
 ## v0.7.0 (2026-09-18)
 
 ### Features

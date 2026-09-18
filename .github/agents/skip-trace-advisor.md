@@ -74,6 +74,135 @@ a "call only, do not text" reminder wherever this pipeline surfaces a
 phone number for outreach. Treat this as a real litigation risk, not a
 nicety — don't relax it for convenience.
 
+## BatchData API reference
+
+BatchData provides real estate data APIs for property search, property
+lookup, address validation, phone verification, compliance checks, skip
+tracing, and reverse skip tracing. Use this reference when advising on
+`batchdata_client.py`, cost controls, request shaping, or future enrichment
+workflows.
+
+- **Base URL**: `https://api.batchdata.com`; this repo's live client uses
+  the verified versioned prefix `https://api.batchdata.com/api/v1`.
+- **Authentication**: token-based auth. Send the BatchData API token as a
+  bearer token in the authorization header, and send JSON requests with
+  `Content-Type: application/json`.
+- **Processing patterns**: major endpoints support synchronous responses
+  for small requests and asynchronous processing for bulk jobs. Async
+  endpoints return a `requestId`; completed results are delivered to the
+  caller-provided `webhookUrl` in request options. Do not assume polling is
+  available.
+- **Billing models**: BatchData charges either per request or per returned
+  result depending on product. Different data types and enrichment levels
+  have different prices; taxes are not included.
+- **Data controls**: APIs may support dataset selection, custom
+  projections, filtering, and pagination, but this account's tested
+  `options.datasets` behavior did not reduce the returned lookup payload,
+  so don't rely on it for cost reduction without re-verifying live.
+- **Best practices**: respect plan-specific rate limits, use async
+  endpoints for bulk processing, handle errors and retries explicitly, and
+  cache responses where allowed to avoid repeated paid calls.
+
+### BatchData product pricing
+
+| Product | Cost per 1,000 API Requests / Results | Cost per API Request / Result |
+| --- | ---: | ---: |
+| Geocoding Rooftop | $4.50 | $0.00450 |
+| Geocoding Reverse | $2.00 | $0.00200 |
+| Phone DNC | $2.00 | $0.00200 |
+| Phone Litigator/TCPA | $2.00 | $0.00200 |
+| Phone Verification | $7.00 | $0.00700 |
+| Skip Tracing | $70.00 | $0.07000 |
+| Property Lookup/Search | N/A | N/A |
+| Address Verification | $15.00 | $0.01500 |
+| Skip Tracing Async | $70.00 | $0.07000 |
+| Phone Verification Async | $7.00 | $0.00700 |
+| Phone DNC Async | $2.00 | $0.00200 |
+| Phone Litigator/TCPA Async | $2.00 | $0.00200 |
+| Property Owner Profile | $2,000.00 | $2.00000 |
+| Address Auto Complete | $3.33 | $0.00333 |
+| Property Subscription | $0.00 | $0.00000 |
+| Skip Tracing V3 | $70.00 | $0.07000 |
+| Skip Tracing Async v3 | $70.00 | $0.07000 |
+| Property Search Sessions | $0.00 | $0.00000 |
+| Wallet Balance | $0.00 | $0.00000 |
+| Wallet Consumption Report | $0.00 | $0.00000 |
+| Wallet Credit Card Transactions | $0.00 | $0.00000 |
+| Reverse Skip Tracing V3 | $100.00 | $0.10000 |
+| Reverse Skip Tracing Async V3 | $100.00 | $0.10000 |
+| Investor Buy Box | $500.00 | $0.50000 |
+
+For this repo's current weekly digest, `enrich_lead()` makes two billable
+BatchData calls per enriched lead: skip trace plus lookup/valuation. It
+does not make separate permit, DNC, or TCPA calls because the tested
+lookup/skip-trace responses already include the fields currently needed
+for human-reviewed outreach.
+
+### BatchData endpoint patterns and examples
+
+Property APIs use `searchCriteria` objects for search-style requests and
+`requests` arrays for lookup/enrichment requests:
+
+- Property Search: `POST /property/search`
+- Property Lookup / All Attributes: `POST /property/lookup/all-attributes`
+- Skip Trace: `POST /property/skip-trace`
+- Reverse Skip Trace: `POST /property/reverse-skip-trace`
+- Reverse Skip Trace Async: `POST /property/reverse-skip-trace/async`
+
+Address and phone APIs commonly use `requests` arrays:
+
+- Address Verification: `POST /address/verify`
+- Phone Verification: `POST /phone/verification`
+- Phone DNC: `POST /phone/dnc`
+
+Address autocomplete uses direct fields, not a `requests` wrapper:
+
+```json
+{
+  "query": "123 main st, aus",
+  "limit": 10
+}
+```
+
+Property search example:
+
+```json
+{
+  "searchCriteria": {
+    "query": "Denver, CO",
+    "valuation": {
+      "estimatedValue": {
+        "max": 500000
+      }
+    }
+  },
+  "take": 20,
+  "datasets": ["basic", "valuation"]
+}
+```
+
+Phone verification example:
+
+```json
+{
+  "requests": ["555-123-4567", "555-987-6543"]
+}
+```
+
+Typical paginated/search response shape:
+
+```json
+{
+  "results": [],
+  "totalCount": 1250,
+  "resultCount": 50,
+  "skip": 0,
+  "take": 50
+}
+```
+
+Full reference: <https://developer.batchdata.com/>.
+
 ## Leverage framing
 
 A property sitting 5+ months on market typically can't pass a lender's

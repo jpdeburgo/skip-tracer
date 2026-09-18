@@ -50,3 +50,19 @@ def test_fetch_jurisdiction_leads_stops_on_empty_features():
     records = fetch_jurisdiction_leads("MONT", session=session)
 
     assert records == []
+
+
+def test_fetch_jurisdiction_leads_excludes_owner_occupied_by_default():
+    session = _FakeSession([{"features": [], "exceededTransferLimit": False}])
+
+    fetch_jurisdiction_leads("MONT", session=session)
+
+    assert "OOI<>'H'" in session.calls[0]["where"]
+
+
+def test_fetch_jurisdiction_leads_includes_owner_occupied_when_requested():
+    session = _FakeSession([{"features": [], "exceededTransferLimit": False}])
+
+    fetch_jurisdiction_leads("MONT", session=session, include_owner_occupied=True)
+
+    assert "OOI" not in session.calls[0]["where"]

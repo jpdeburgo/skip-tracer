@@ -1,0 +1,23 @@
+{
+  "error": "400 Client Error: Bad Request for url: https://api.batchdata.com/api/v1/property/search",
+  "error_body": {
+    "status": {
+      "code": 400,
+      "message": "Invalid request. quickLists should be an array of strings.",
+      "request_id": "093ccea0-12f3-4e58-a8a0-b1efc5b0e80e",
+      "text": "Bad Request"
+    }
+  },
+  "request": {
+    "search_criteria": {
+      "county": "Montgomery",
+      "quickLists": {
+        "preforeclosure": true
+      },
+      "state": "MD"
+    },
+    "skip": 0,
+    "take": 5
+  },
+  "response": null
+}
