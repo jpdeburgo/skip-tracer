@@ -33,18 +33,32 @@ REQUEST_TIMEOUT_SECONDS = 30
 
 
 def fetch_jurisdiction_leads(
-    jurs_code: str, session: requests.Session | None = None
+    jurs_code: str,
+    session: requests.Session | None = None,
+    include_owner_occupied: bool = False,
 ) -> list[dict]:
-    """Pull all candidate absentee-owner leads for one MD jurisdiction.
+    """Pull all candidate leads for one MD jurisdiction.
 
     Paginates past the server's per-request transfer limit using
     `exceededTransferLimit`, since the server caps returned records well
     below any `resultRecordCount` we ask for.
+
+    By default drops owner-occupied parcels (`OOI<>'H'`) since the weekly
+    absentee-owner pipeline only wants those. Pass `include_owner_occupied`
+    for the pre-foreclosure pipeline instead: a homeowner behind on their
+    own mortgage is still living in the property, so excluding OOI='H'
+    would filter out exactly the sellers that mode is looking for.
     """
-    where_clause = (
-        f"JURSCODE='{jurs_code}' AND OOI<>'H' AND ADDRESS IS NOT NULL "
-        f"AND EXCLASS IS NULL AND NFMIMPVL IS NOT NULL AND CIUSE IS NULL"
-    )
+    conditions = [f"JURSCODE='{jurs_code}'"]
+    if not include_owner_occupied:
+        conditions.append("OOI<>'H'")
+    conditions += [
+        "ADDRESS IS NOT NULL",
+        "EXCLASS IS NULL",
+        "NFMIMPVL IS NOT NULL",
+        "CIUSE IS NULL",
+    ]
+    where_clause = " AND ".join(conditions)
     http = session or requests
     all_records: list[dict] = []
     offset = 0
