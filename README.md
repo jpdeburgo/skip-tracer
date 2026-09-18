@@ -302,6 +302,59 @@ subject line.
 - **Street View + vision-model condition assessment is deferred to v2** —
   also tracked as a GitHub issue.
 
+## Call playbook (domain knowledge from an experienced skip tracer)
+
+This section captures field practice from an experienced Maryland
+wholesaler/skip tracer, distilled into how the digest's `cli.call_script()`
+builds a per-lead "Call prep" block and why a few pipeline decisions above
+are made the way they are. It's a reference for the human making the call,
+not something the pipeline acts on automatically (see "No automated
+outreach" below).
+
+- **PCMT**: every seller call boils down to four answers — **P**rice,
+  **C**ondition, **M**otivation, **T**ime. Get those four and the call is
+  done; you don't need the wording of a script beyond that. Each digest
+  entry's "Call prep" block is organized around exactly these four.
+- **Never anchor with your own number first.** Ask the seller what they
+  need to walk away with, or what number they have in mind. Making an
+  offer before hearing theirs gives away negotiating room for nothing.
+- **The opener should match the distress signal, not be generic.**
+  `call_script()` picks an opening angle from the lead's `distress_flags`/
+  `motivation_signal`:
+  - Foreclosure signals (`Notice of Sale`, `Notice of Default`,
+    `Pre-Foreclosure`) → lead with timeline/certainty, not price.
+  - `Tax Default` → ask whether back taxes are actually current now; a
+    resolved-but-recent default often means a payment plan, a power of
+    attorney, or an elderly owner with a caretaker — and repeat
+    delinquency is common, so don't assume it's fixed for good.
+  - `Inherited` (or a non-sale-transfer `motivation_signal`, e.g. probate/
+    divorce transfers with `CONVEY1 == 4` and no `CONSIDR1`) → do **not**
+    open with "we pay cash." Sellers of inherited property (often older
+    heirs) tend to care more about avoiding capital gains and the hassle
+    of probate than about cash speed.
+  - `Tired Landlord` → lead with relief from tenant/maintenance hassle.
+  - `Vacant` → ask what it's costing them to maintain/insure an empty
+    house.
+- **A seller with nowhere to go after closing isn't a workable deal**,
+  regardless of margin — that's why `call_script()` always includes an
+  explicit "confirm they have an exit plan" line. This is a
+  disqualifier the human needs to catch live; it isn't derivable from
+  any field in the digest.
+- **Time-on-market is leverage.** A property that's sat 5+ months
+  typically can't pass a lender's inspection as-is, which is exactly why
+  it's still unsold — worth raising with the seller as a reason a fast,
+  as-is close is actually in their interest, not just ours.
+- **Don't trust free/USPS vacant-property lists.** They're only refreshed
+  a few times a year and are frequently wrong (confirmed by driving past
+  "vacant" addresses that clearly weren't). This is why this pipeline uses
+  BatchData's `vacant` quickList flag — a paid, more current signal —
+  instead of a free USPS-derived list.
+- **Texting requires prior consent, always** (TCPA) — a lead's
+  `do_not_call`/`tcpa_risk` fields (from BatchData's skip-trace response)
+  drive the "call only, do not text" line in `call_script()`'s compliance
+  reminder. Getting this wrong is a real, litigated liability, not just a
+  compliance nicety.
+
 ## No automated outreach to owners (by design)
 
 This pipeline emails a digest to *you* for manual review — it does not,
