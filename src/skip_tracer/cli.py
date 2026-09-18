@@ -77,6 +77,16 @@ DISTRESS_FLAG_LABELS = {
     "lowEquity": "Low Equity",
 }
 
+# The subset of DISTRESS_FLAG_LABELS that specifically means an active
+# foreclosure filing is on record — the window this pipeline's
+# --preforeclosure mode targets, where the owner still legally owns the
+# home but is at risk of losing it. taxDefault/involuntaryLien are related
+# distress signals but aren't themselves a foreclosure filing, so they stay
+# out of this subset.
+PREFORECLOSURE_FLAG_KEYS = frozenset(
+    {"preforeclosure", "noticeOfDefault", "noticeOfSale", "noticeOfLisPendens"}
+)
+
 
 def _distress_flags(quick_lists: dict[str, Any]) -> list[str]:
     return [label for key, label in DISTRESS_FLAG_LABELS.items() if quick_lists.get(key)]
@@ -141,6 +151,10 @@ def call_script(lead: Lead) -> list[str]:
     return lines
 
 
+def _in_preforeclosure(quick_lists: dict[str, Any]) -> bool:
+    return any(quick_lists.get(key) for key in PREFORECLOSURE_FLAG_KEYS)
+
+
 @dataclass
 class Lead:
     acctid: str
@@ -163,6 +177,7 @@ class Lead:
     total_lien_balance: float | None = None
     payoff_profit: float | None = None
     high_priority: bool = False
+    in_preforeclosure: bool = False
     low_margin: bool | None = None
     corporate_or_trust_owned: bool = False
     distress_flags: list[str] = field(default_factory=list)
@@ -175,11 +190,16 @@ def _motivation_signal(record: dict[str, Any]) -> str:
         and not record.get("CONSIDR1")
     ):
         return "Non-sale transfer (possible inheritance)"
+    if record.get("is_absentee") is False:
+        return "Owner-occupied (pre-foreclosure candidate)"
     return "Absentee owner"
 
 
 def gather_new_leads(
-    seen: set[str], jurisdictions: list[str] | None = None, limit: int | None = None
+    seen: set[str],
+    jurisdictions: list[str] | None = None,
+    limit: int | None = None,
+    require_absentee: bool = True,
 ) -> list[dict[str, Any]]:
     """Fetch, dedupe, and filter candidate records — no BatchData calls yet.
 
@@ -191,23 +211,37 @@ def gather_new_leads(
     would make gather_new_leads() the slow part of the pipeline for no
     reason. Leads past the limit are simply left unseen and picked up
     naturally on a future run, once already-enriched ACCTIDs are in `seen`.
+
+    `require_absentee=False` is the --preforeclosure mode: MD iMap is
+    queried with owner-occupied parcels included (a homeowner behind on
+    their own mortgage is still living there), and the absentee-address
+    filter is skipped rather than used to drop candidates. Unlike absentee
+    status, pre-foreclosure status isn't knowable from MD iMap's free data
+    at all — only BatchData's quickLists tell you that, in enrich_lead()
+    below — so this mode can't pre-filter for it the same way and will bill
+    BatchData for candidates that turn out not to be in foreclosure.
     """
     new_records = []
     for jurs_code in jurisdictions or PROCESSING_ORDER:
-        for record in fetch_jurisdiction_leads(jurs_code):
+        for record in fetch_jurisdiction_leads(
+            jurs_code, include_owner_occupied=not require_absentee
+        ):
             if limit is not None and len(new_records) >= limit:
                 return new_records
 
             acctid = record.get("ACCTID")
             if not acctid or acctid in seen:
                 continue
-            if not is_genuinely_absentee(record):
+
+            is_absentee = is_genuinely_absentee(record)
+            if require_absentee and not is_absentee:
                 continue
 
             entity_type = classify_owner_entity(record)
             if entity_type == "diplomatic":
                 continue
 
+            record["is_absentee"] = is_absentee
             record["entity_type"] = entity_type
             record["contactability_tier"] = contactability_tier(record)
             new_records.append(record)
@@ -318,6 +352,7 @@ def enrich_lead(
                     permit_history = [{"year": latest_permit_year}]
                 quick_lists = prop.get("quickLists") or {}
                 lead.distress_flags = _distress_flags(quick_lists)
+                lead.in_preforeclosure = _in_preforeclosure(quick_lists)
                 lead.corporate_or_trust_owned = bool(
                     quick_lists.get("corporateOwned") or quick_lists.get("trustOwned")
                 )
@@ -349,7 +384,7 @@ def enrich_lead(
     return lead
 
 
-def _exclusion_reasons(lead: Lead) -> list[str]:
+def _exclusion_reasons(lead: Lead, require_preforeclosure: bool = False) -> list[str]:
     """Reasons a lead isn't worth pursuing. Only flags what can actually be
     determined from data on hand — a lead with no valuation data at all
     (e.g. BatchData unavailable) isn't excluded on margin grounds, since
@@ -363,17 +398,24 @@ def _exclusion_reasons(lead: Lead) -> list[str]:
         reasons.append("no phone or email found")
     if lead.corporate_or_trust_owned:
         reasons.append("corporate/trust owned")
+    if require_preforeclosure and not lead.in_preforeclosure:
+        reasons.append(
+            "not currently in pre-foreclosure (no BatchData preforeclosure/"
+            "notice-of-default/notice-of-sale/lis-pendens flag)"
+        )
     return reasons
 
 
-def filter_worth_pursuing(leads: list[Lead]) -> list[Lead]:
+def filter_worth_pursuing(
+    leads: list[Lead], require_preforeclosure: bool = False
+) -> list[Lead]:
     """Drops leads flagged by _exclusion_reasons() from the digest. Callers
     should still mark every lead's ACCTID as seen regardless of this
     filter's outcome — a lead that isn't worth pursuing today was still
     paid for, so it shouldn't be re-enriched (re-billed) on a future run."""
     kept = []
     for lead in leads:
-        reasons = _exclusion_reasons(lead)
+        reasons = _exclusion_reasons(lead, require_preforeclosure=require_preforeclosure)
         if reasons:
             print(f"Not pursuing {lead.acctid} ({lead.address}): {', '.join(reasons)}")
         else:
@@ -418,7 +460,11 @@ def build_digest_body(leads: list[Lead]) -> str:
             if lead.last_sale_price is not None
             else ""
         )
-        priority_prefix = "[HIGH PRIORITY] " if lead.high_priority else ""
+        priority_prefix = ""
+        if lead.in_preforeclosure:
+            priority_prefix += "[PRE-FORECLOSURE] "
+        if lead.high_priority:
+            priority_prefix += "[HIGH PRIORITY] "
         script_lines = "".join(f"    - {line}\n" for line in call_script(lead))
         body_lines.append(
             f"{priority_prefix}{lead.address}\n"
@@ -458,6 +504,20 @@ def main() -> None:
         help="Limit to specific jurisdiction codes (default: all, priority order)",
     )
     parser.add_argument("--no-email", action="store_true", help="Skip sending the digest")
+    parser.add_argument(
+        "--preforeclosure",
+        action="store_true",
+        help=(
+            "Target the pre-foreclosure window instead of absentee owners: "
+            "includes owner-occupied properties (dropping the absentee-address "
+            "filter) and only keeps leads BatchData flags as preforeclosure/"
+            "notice-of-default/notice-of-sale/lis-pendens. MD iMap has no free "
+            "way to pre-filter for foreclosure status the way it does for "
+            "absentee ownership, so every gathered candidate still costs a "
+            "BatchData call even if it turns out not to be in foreclosure — "
+            "consider a lower BATCHDATA_MAX_ENRICHMENT_ATTEMPTS."
+        ),
+    )
     args = parser.parse_args()
 
     seen = load_seen_parcels()
@@ -472,11 +532,18 @@ def main() -> None:
     )
     max_attempts = max(max_attempts, target_matches)
 
-    candidates = gather_new_leads(seen, args.jurisdictions, limit=max_attempts)
+    candidates = gather_new_leads(
+        seen,
+        args.jurisdictions,
+        limit=max_attempts,
+        require_absentee=not args.preforeclosure,
+    )
     print(
         f"Gathered {len(candidates)} candidate lead(s) to try (up to "
         f"BATCHDATA_MAX_ENRICHMENT_ATTEMPTS={max_attempts}), looking for "
-        f"{target_matches} worth pursuing."
+        f"{target_matches} worth pursuing"
+        + (" in pre-foreclosure" if args.preforeclosure else "")
+        + "."
     )
 
     api_token = os.environ.get("BATCHDATA_API_KEY")
@@ -495,7 +562,9 @@ def main() -> None:
     for record in candidates:
         lead = enrich_lead(record, batchdata, cache=cache)
         enriched.append(lead)
-        leads.extend(filter_worth_pursuing([lead]))
+        leads.extend(
+            filter_worth_pursuing([lead], require_preforeclosure=args.preforeclosure)
+        )
         if len(leads) >= target_matches:
             break
     save_batchdata_cache(cache)
@@ -512,9 +581,11 @@ def main() -> None:
             f"after trying every gathered candidate this run."
         )
 
-    # High-priority leads (profitable even offering just the payoff amount)
-    # surface first in the digest.
-    leads.sort(key=lambda lead: not lead.high_priority)
+    # Leads currently in pre-foreclosure surface first regardless of mode
+    # (BatchData's flags are read every run, not just --preforeclosure
+    # ones), then high-priority leads (profitable even offering just the
+    # payoff amount) within each group.
+    leads.sort(key=lambda lead: (not lead.in_preforeclosure, not lead.high_priority))
 
     archive = load_lead_archive()
     record_leads(archive, enriched)

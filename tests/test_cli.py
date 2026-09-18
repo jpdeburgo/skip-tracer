@@ -69,7 +69,9 @@ def test_gather_new_leads_filters_seen_absentee_and_diplomatic(monkeypatch):
         _record("3", "1 EMBASSY ROW"),  # diplomatic -> dropped
         _record("4", "100 Other St"),  # already seen -> dropped
     ]
-    monkeypatch.setattr(cli, "fetch_jurisdiction_leads", lambda jurs: records)
+    monkeypatch.setattr(
+        cli, "fetch_jurisdiction_leads", lambda jurs, include_owner_occupied=False: records
+    )
     # classify_owner_entity's non-diplomatic path loads a real NER model;
     # only the diplomatic keyword shortcut (record "3") is exercised for
     # real here, everything else is stubbed to "individual".
@@ -94,7 +96,9 @@ def test_gather_new_leads_stops_scanning_once_limit_reached(monkeypatch):
         return "individual"
 
     records = [_record(str(i), "100 Other St") for i in range(10)]
-    monkeypatch.setattr(cli, "fetch_jurisdiction_leads", lambda jurs: records)
+    monkeypatch.setattr(
+        cli, "fetch_jurisdiction_leads", lambda jurs, include_owner_occupied=False: records
+    )
     monkeypatch.setattr(cli, "classify_owner_entity", fake_classify)
 
     new_records = cli.gather_new_leads(seen=set(), jurisdictions=["MONT"], limit=2)
@@ -105,6 +109,35 @@ def test_gather_new_leads_stops_scanning_once_limit_reached(monkeypatch):
     assert classify_calls == ["0", "1"]
 
 
+def test_gather_new_leads_include_owner_occupied_when_absentee_not_required(monkeypatch):
+    records = [
+        _record("1", "100 Other St"),  # absentee
+        _record("2", "200 Main St"),  # owner-occupied -> now kept too
+        _record("3", "1 EMBASSY ROW"),  # diplomatic -> still dropped
+    ]
+    fetch_calls = []
+
+    def fake_fetch(jurs, include_owner_occupied=False):
+        fetch_calls.append(include_owner_occupied)
+        return records
+
+    monkeypatch.setattr(cli, "fetch_jurisdiction_leads", fake_fetch)
+    monkeypatch.setattr(
+        cli,
+        "classify_owner_entity",
+        lambda record: "diplomatic" if "EMBASSY" in record["OWNADD1"] else "individual",
+    )
+
+    new_records = cli.gather_new_leads(
+        seen=set(), jurisdictions=["MONT"], require_absentee=False
+    )
+
+    assert fetch_calls == [True]
+    assert [r["ACCTID"] for r in new_records] == ["1", "2"]
+    assert new_records[0]["is_absentee"] is True
+    assert new_records[1]["is_absentee"] is False
+
+
 def test_motivation_signal_flags_non_sale_transfer():
     record = {"CONVEY1": 4, "CONSIDR1": None}
     assert cli._motivation_signal(record) == "Non-sale transfer (possible inheritance)"
@@ -112,6 +145,11 @@ def test_motivation_signal_flags_non_sale_transfer():
 
 def test_motivation_signal_defaults_to_absentee_owner():
     assert cli._motivation_signal({"CONVEY1": 1, "CONSIDR1": 250000}) == "Absentee owner"
+
+
+def test_motivation_signal_flags_owner_occupied_pre_foreclosure_candidate():
+    record = {"CONVEY1": 1, "CONSIDR1": 250000, "is_absentee": False}
+    assert cli._motivation_signal(record) == "Owner-occupied (pre-foreclosure candidate)"
 
 
 def test_enrich_lead_without_batchdata_client_still_builds_zillow_link():
@@ -155,6 +193,9 @@ def test_enrich_lead_parses_real_batchdata_response_shapes():
     # payoff_profit can't be computed either - same gating as mao_estimate.
     assert lead.payoff_profit is None
     assert lead.high_priority is False
+    # Real quickLists for this property has only highEquity true — no
+    # preforeclosure/NOD/NOS/lis-pendens flag.
+    assert lead.in_preforeclosure is False
 
 
 def test_distress_flags_only_includes_true_flags_in_label_order():
@@ -170,6 +211,46 @@ def test_distress_flags_only_includes_true_flags_in_label_order():
         "Pre-Foreclosure",
         "Low Equity",
     ]
+
+
+def test_in_preforeclosure_true_for_any_foreclosure_filing_flag():
+    assert cli._in_preforeclosure({"noticeOfSale": True}) is True
+    assert cli._in_preforeclosure({"noticeOfLisPendens": True}) is True
+
+
+def test_in_preforeclosure_false_for_unrelated_distress_flags():
+    # taxDefault/involuntaryLien are real distress signals but aren't
+    # themselves an active foreclosure filing.
+    assert cli._in_preforeclosure({"taxDefault": True, "involuntaryLien": True}) is False
+
+
+def test_in_preforeclosure_false_when_nothing_true():
+    assert cli._in_preforeclosure({}) is False
+
+
+def test_enrich_lead_sets_in_preforeclosure_from_quicklists():
+    record = _record("1", "100 Other St", ADDRESS="200 Main St")
+
+    class _Client:
+        def skip_trace(self, address):
+            return {"results": {"persons": [{}]}}
+
+        def lookup_valuation(self, address):
+            return {
+                "results": {
+                    "properties": [
+                        {
+                            "valuation": {"estimatedValue": 300_000},
+                            "quickLists": {"noticeOfDefault": True},
+                        }
+                    ]
+                }
+            }
+
+    lead = cli.enrich_lead(record, batchdata=_Client())
+
+    assert lead.in_preforeclosure is True
+    assert lead.distress_flags == ["Notice of Default"]
 
 
 def test_distress_flags_empty_when_nothing_true():
@@ -425,6 +506,21 @@ def test_build_digest_body_marks_high_priority_leads():
     assert "Profit if offer = payoff: $160,000 — HIGH PRIORITY" in body
 
 
+def test_build_digest_body_marks_preforeclosure_leads():
+    lead = cli.Lead(
+        acctid="1",
+        address="1 Main St",
+        in_preforeclosure=True,
+        high_priority=True,
+        distress_flags=["Notice of Default"],
+        zillow_link="https://example.com",
+    )
+
+    body = cli.build_digest_body([lead])
+
+    assert "[PRE-FORECLOSURE] [HIGH PRIORITY] 1 Main St" in body
+
+
 def test_build_digest_body_omits_payoff_line_without_lien_data():
     lead = cli.Lead(acctid="1", address="1 Main St", zillow_link="https://example.com")
 
@@ -491,6 +587,22 @@ def test_exclusion_reasons_flags_corporate_or_trust_owned():
     assert "corporate/trust owned" in cli._exclusion_reasons(lead)
 
 
+def test_exclusion_reasons_ignores_preforeclosure_status_by_default():
+    lead = _viable_lead(in_preforeclosure=False)
+    assert cli._exclusion_reasons(lead) == []
+
+
+def test_exclusion_reasons_flags_missing_preforeclosure_when_required():
+    lead = _viable_lead(in_preforeclosure=False)
+    reasons = cli._exclusion_reasons(lead, require_preforeclosure=True)
+    assert "not currently in pre-foreclosure" in reasons[0]
+
+
+def test_exclusion_reasons_passes_when_preforeclosure_required_and_present():
+    lead = _viable_lead(in_preforeclosure=True)
+    assert cli._exclusion_reasons(lead, require_preforeclosure=True) == []
+
+
 def test_filter_worth_pursuing_drops_only_excluded_leads(capsys):
     keep = _viable_lead(acctid="keep")
     drop = _viable_lead(acctid="drop", corporate_or_trust_owned=True)
@@ -501,6 +613,15 @@ def test_filter_worth_pursuing_drops_only_excluded_leads(capsys):
     assert "Not pursuing drop" in capsys.readouterr().out
 
 
+def test_filter_worth_pursuing_requires_preforeclosure_when_asked():
+    keep = _viable_lead(acctid="keep", in_preforeclosure=True)
+    drop = _viable_lead(acctid="drop", in_preforeclosure=False)
+
+    kept = cli.filter_worth_pursuing([keep, drop], require_preforeclosure=True)
+
+    assert kept == [keep]
+
+
 def _stub_main_dependencies(monkeypatch, records, passing_acctids):
     """Wires up every cli.main() side-effect except enrich_lead's outcome
     (controlled via passing_acctids) so the enrichment-loop control flow
@@ -508,7 +629,9 @@ def _stub_main_dependencies(monkeypatch, records, passing_acctids):
     files for real."""
     monkeypatch.setattr(cli, "load_seen_parcels", lambda: set())
     monkeypatch.setattr(
-        cli, "gather_new_leads", lambda seen, jurisdictions, limit: records[:limit]
+        cli,
+        "gather_new_leads",
+        lambda seen, jurisdictions, limit, require_absentee=True: records[:limit],
     )
 
     enrich_calls = []
@@ -636,3 +759,83 @@ def test_main_sorts_high_priority_leads_first(monkeypatch):
     cli.main()
 
     assert [lead.acctid for lead in sent["leads"]] == ["1", "0", "2"]
+
+
+def test_main_sorts_preforeclosure_leads_before_high_priority(monkeypatch):
+    records = [_record(str(i), "100 Other St") for i in range(3)]
+    enrich_calls, saved_seen, saved_archive, saved_qualified, sent = _stub_main_dependencies(
+        monkeypatch, records, passing_acctids={"0", "1", "2"}
+    )
+
+    def fake_enrich(record, batchdata, cache=None):
+        enrich_calls.append(record["ACCTID"])
+        return cli.Lead(
+            acctid=record["ACCTID"],
+            address=record["ADDRESS"],
+            phone="555-0000",
+            low_margin=False,
+            # "1" is only high-priority; "2" is in pre-foreclosure (and
+            # should rank first despite not being high-priority).
+            high_priority=(record["ACCTID"] == "1"),
+            in_preforeclosure=(record["ACCTID"] == "2"),
+        )
+
+    monkeypatch.setattr(cli, "enrich_lead", fake_enrich)
+    monkeypatch.setenv("BATCHDATA_MAX_LEADS_PER_RUN", "3")
+    monkeypatch.setenv("BATCHDATA_MAX_ENRICHMENT_ATTEMPTS", "3")
+
+    cli.main()
+
+    assert [lead.acctid for lead in sent["leads"]] == ["2", "1", "0"]
+
+
+def test_main_preforeclosure_flag_loosens_absentee_requirement_and_filter(monkeypatch):
+    records = [_record(str(i), "100 Other St") for i in range(3)]
+    gather_calls = []
+
+    def fake_gather(seen, jurisdictions, limit, require_absentee=True):
+        gather_calls.append(require_absentee)
+        return records[:limit]
+
+    monkeypatch.setattr(cli, "load_seen_parcels", lambda: set())
+    monkeypatch.setattr(cli, "gather_new_leads", fake_gather)
+
+    filter_calls = []
+    real_filter_worth_pursuing = cli.filter_worth_pursuing
+
+    def spy_filter(leads, require_preforeclosure=False):
+        filter_calls.append(require_preforeclosure)
+        return real_filter_worth_pursuing(leads, require_preforeclosure=require_preforeclosure)
+
+    monkeypatch.setattr(cli, "filter_worth_pursuing", spy_filter)
+    monkeypatch.setattr(
+        cli,
+        "enrich_lead",
+        lambda record, batchdata, cache=None: cli.Lead(
+            acctid=record["ACCTID"],
+            address=record["ADDRESS"],
+            phone="555-0000",
+            low_margin=False,
+            in_preforeclosure=True,
+        ),
+    )
+    monkeypatch.setattr(cli, "load_batchdata_cache", lambda: {})
+    monkeypatch.setattr(cli, "save_batchdata_cache", lambda cache: None)
+    monkeypatch.setattr(cli, "save_seen_parcels", lambda seen: None)
+    monkeypatch.setattr(cli, "load_lead_archive", lambda: {})
+    monkeypatch.setattr(cli, "save_lead_archive", lambda arch: None)
+    monkeypatch.setattr(cli, "load_qualified_leads", lambda: {})
+    monkeypatch.setattr(cli, "save_qualified_leads", lambda qualified: None)
+    monkeypatch.setattr(cli, "send_weekly_digest", lambda leads, to_email: None)
+    monkeypatch.setenv("DIGEST_EMAIL_TO", "me@example.com")
+    monkeypatch.delenv("BATCHDATA_API_KEY", raising=False)
+    monkeypatch.setenv("BATCHDATA_MAX_LEADS_PER_RUN", "3")
+    monkeypatch.setenv("BATCHDATA_MAX_ENRICHMENT_ATTEMPTS", "3")
+    monkeypatch.setattr(sys, "argv", ["skip_tracer.cli", "--preforeclosure"])
+
+    cli.main()
+
+    # require_absentee=False (owner-occupied included) and every filter
+    # call is told to require the pre-foreclosure flag.
+    assert gather_calls == [False]
+    assert filter_calls == [True, True, True]
