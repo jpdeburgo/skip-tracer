@@ -1,10 +1,12 @@
 """Manual verification script for BatchDataClient.search_properties().
 
-UNVERIFIED endpoint (see batchdata_client.py's search_properties()
-docstring) — this script exists to find the real request/response shape
-with the smallest possible number of billable calls, the same way
-test_skip_trace.py/test_valuation.py verified skip_trace()/
-lookup_valuation() before either was trusted in cli.py.
+VERIFIED against a real, funded account (see batchdata_client.py's
+search_properties() docstring for full detail) — this script exists to
+keep experimenting with search_criteria filters (quickLists combos,
+valuation ranges, etc.) with the smallest possible number of billable
+calls, the same way test_skip_trace.py/test_valuation.py were used to
+verify skip_trace()/lookup_valuation() before either was trusted in
+cli.py.
 
 Every raw response is saved to disk (see --out below) before anything
 else happens, so a single paid call is never lost to a crash, a typo in
@@ -15,11 +17,16 @@ you already paid for once.
 This is NOT wired into cli.py's pipeline and does not run by default —
 property/search is a bulk/billable discovery call, unlike the
 already-verified per-address skip-trace/valuation calls, so keep --take
-small (default 5) until you've confirmed the shape and the per-call cost.
+small (default 5, capped at 25 by BatchData regardless) until you're
+ready to build a real pagination loop.
+
+IMPORTANT: use --query "City, ST" or "County County, ST" to geofence
+results — county/state search_criteria fields are silently ignored by
+BatchData (confirmed live: returned properties scattered nationwide).
 
 Usage:
     PYTHONPATH=src pipenv run python scripts/test_property_search.py \\
-        --county Montgomery --state MD --take 5
+        --query "Montgomery County, MD" --take 5
 """
 
 from __future__ import annotations
@@ -27,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -43,8 +51,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Manually verify BatchDataClient.search_properties() against a live account"
     )
-    parser.add_argument("--county", required=True, help="e.g. Montgomery")
-    parser.add_argument("--state", default="MD")
+    parser.add_argument(
+        "--query",
+        required=True,
+        help='Free-text geofence, e.g. "Montgomery County, MD" or "Rockville, MD" — '
+        "the only confirmed way to scope results to a location.",
+    )
     parser.add_argument(
         "--quicklist",
         default="preforeclosure",
@@ -54,8 +66,8 @@ def main() -> None:
         "--take",
         type=int,
         default=5,
-        help="Max properties to request (keep small — this is a billable bulk call, cost per "
-        "call is not yet confirmed)",
+        help="Max properties to request (BatchData caps each response at 25 regardless; "
+        "use --skip to paginate beyond that)",
     )
     parser.add_argument("--skip", type=int, default=0)
     parser.add_argument(
@@ -71,8 +83,7 @@ def main() -> None:
         raise SystemExit(1)
 
     search_criteria = {
-        "county": args.county,
-        "state": args.state,
+        "query": args.query,
         "quickLists": [args.quicklist],
     }
 
@@ -88,8 +99,8 @@ def main() -> None:
         result = None
         error = str(exc)
         # requests.HTTPError carries the actual server response (often a JSON
-        # body explaining *why* it's a 400) on .response — capture that too,
-        # since the exception string alone only has the HTTP status line.
+        # body explaining *why* it's a 400/403) on .response — capture that
+        # too, since the exception string alone only has the HTTP status line.
         response = getattr(exc, "response", None)
         if response is not None:
             try:
@@ -103,7 +114,8 @@ def main() -> None:
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    out_path = out_dir / f"search_{args.county}_{args.quicklist}_{timestamp}.json"
+    query_slug = re.sub(r"[^A-Za-z0-9]+", "_", args.query).strip("_")
+    out_path = out_dir / f"search_{query_slug}_{args.quicklist}_{timestamp}.json"
     out_path.write_text(
         json.dumps(
             {
