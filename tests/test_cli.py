@@ -30,6 +30,7 @@ REAL_VALUATION_RESPONSE = {
                 "valuation": {"estimatedValue": 1512714},
                 "owner": {"fullName": "Atalay Evinch; Gunay Evinch"},
                 "sale": {"lastSale": {"price": 1119500, "saleDate": "2006-10-16T00:00:00.000Z"}},
+                "openLien": {"totalOpenLienBalance": 212802},
                 "permit": {
                     "permitCount": 2,
                     "latestDate": "2010-07-28T00:00:00.000Z",
@@ -149,6 +150,11 @@ def test_enrich_lead_parses_real_batchdata_response_shapes():
     assert lead.corporate_or_trust_owned is False
     assert lead.last_sale_price == 1119500
     assert lead.last_sale_date == "2006"
+    assert lead.total_lien_balance == 212802
+    # No repair_cost_estimate (STRUGRAD absent, condition unassessed) means
+    # payoff_profit can't be computed either - same gating as mao_estimate.
+    assert lead.payoff_profit is None
+    assert lead.high_priority is False
 
 
 def test_distress_flags_only_includes_true_flags_in_label_order():
@@ -210,6 +216,92 @@ def test_enrich_lead_computes_repair_cost_and_mao_when_condition_known():
     assert lead.mao_estimate == 300_000 * 0.70 - 40_000
 
 
+def _client_with_lien(lien_balance=None, free_and_clear=False, arv=300_000):
+    quick_lists = {}
+    if free_and_clear:
+        quick_lists["freeAndClear"] = True
+    valuation_properties = {"valuation": {"estimatedValue": arv}, "permit": {}}
+    if lien_balance is not None:
+        valuation_properties["openLien"] = {"totalOpenLienBalance": lien_balance}
+    if quick_lists:
+        valuation_properties["quickLists"] = quick_lists
+
+    class _Client:
+        def skip_trace(self, address):
+            return {"results": {"persons": [{}]}}
+
+        def lookup_valuation(self, address):
+            return {"results": {"properties": [valuation_properties]}}
+
+    return _Client()
+
+
+def test_enrich_lead_flags_high_priority_when_payoff_profit_positive():
+    record = _record("1", "100 Other St", ADDRESS="200 Main St", STRUGRAD="3", SQFTSTRC=1000)
+
+    lead = cli.enrich_lead(record, batchdata=_client_with_lien(lien_balance=100_000, arv=300_000))
+
+    # ARV 300k - lien 100k - repair 40k (1000 sqft * $40/sqft) = 160k profit
+    assert lead.total_lien_balance == 100_000
+    assert lead.payoff_profit == 160_000.0
+    assert lead.high_priority is True
+
+
+def test_enrich_lead_not_high_priority_when_payoff_profit_negative():
+    record = _record("1", "100 Other St", ADDRESS="200 Main St", STRUGRAD="3", SQFTSTRC=1000)
+
+    lead = cli.enrich_lead(record, batchdata=_client_with_lien(lien_balance=280_000, arv=300_000))
+
+    # ARV 300k - lien 280k - repair 40k = -20k, not profitable at payoff alone
+    assert lead.payoff_profit == -20_000.0
+    assert lead.high_priority is False
+
+
+def test_enrich_lead_free_and_clear_treats_lien_balance_as_zero():
+    record = _record("1", "100 Other St", ADDRESS="200 Main St", STRUGRAD="3", SQFTSTRC=1000)
+
+    lead = cli.enrich_lead(
+        record, batchdata=_client_with_lien(lien_balance=None, free_and_clear=True, arv=300_000)
+    )
+
+    assert lead.total_lien_balance == 0
+    assert lead.payoff_profit == 260_000.0  # 300k - 0 - 40k repair
+    assert lead.high_priority is True
+
+
+def test_enrich_lead_no_lien_signal_leaves_payoff_fields_unset():
+    record = _record("1", "100 Other St", ADDRESS="200 Main St", STRUGRAD="3", SQFTSTRC=1000)
+
+    lead = cli.enrich_lead(record, batchdata=_client_with_lien(lien_balance=None, arv=300_000))
+
+    assert lead.total_lien_balance is None
+    assert lead.payoff_profit is None
+    assert lead.high_priority is False
+
+
+def test_enrich_lead_reuses_cached_batchdata_responses():
+    record = _record("1", "100 Other St", ADDRESS="200 Main St")
+    call_counts = {"skip_trace": 0, "valuation": 0}
+
+    class _CountingClient:
+        def skip_trace(self, address):
+            call_counts["skip_trace"] += 1
+            return {"results": {"persons": [{}]}}
+
+        def lookup_valuation(self, address):
+            call_counts["valuation"] += 1
+            return {"results": {"properties": [{"valuation": {"estimatedValue": 100_000}}]}}
+
+    client = _CountingClient()
+    cache: dict = {}
+
+    cli.enrich_lead(record, client, cache=cache)
+    cli.enrich_lead(record, client, cache=cache)
+
+    assert call_counts == {"skip_trace": 1, "valuation": 1}
+    assert cache["1"]["record"] == record
+
+
 def test_build_digest_body_includes_valuation_and_mao_figures():
     lead = cli.Lead(
         acctid="1",
@@ -246,6 +338,32 @@ def test_build_digest_body_omits_last_sale_line_when_unknown():
     body = cli.build_digest_body([lead])
 
     assert "Last sale" not in body
+
+
+def test_build_digest_body_marks_high_priority_leads():
+    lead = cli.Lead(
+        acctid="1",
+        address="1 Main St",
+        total_lien_balance=100_000,
+        payoff_profit=160_000,
+        high_priority=True,
+        zillow_link="https://example.com",
+    )
+
+    body = cli.build_digest_body([lead])
+
+    assert "[HIGH PRIORITY] 1 Main St" in body
+    assert "Owes: $100,000" in body
+    assert "Profit if offer = payoff: $160,000 — HIGH PRIORITY" in body
+
+
+def test_build_digest_body_omits_payoff_line_without_lien_data():
+    lead = cli.Lead(acctid="1", address="1 Main St", zillow_link="https://example.com")
+
+    body = cli.build_digest_body([lead])
+
+    assert "Owes:" not in body
+    assert "[HIGH PRIORITY]" not in body
 
 
 def test_build_digest_body_shows_unknown_for_missing_dollar_figures():
@@ -327,7 +445,7 @@ def _stub_main_dependencies(monkeypatch, records, passing_acctids):
 
     enrich_calls = []
 
-    def fake_enrich(record, batchdata):
+    def fake_enrich(record, batchdata, cache=None):
         enrich_calls.append(record["ACCTID"])
         passes = record["ACCTID"] in passing_acctids
         return cli.Lead(
@@ -338,6 +456,9 @@ def _stub_main_dependencies(monkeypatch, records, passing_acctids):
         )
 
     monkeypatch.setattr(cli, "enrich_lead", fake_enrich)
+
+    monkeypatch.setattr(cli, "load_batchdata_cache", lambda: {})
+    monkeypatch.setattr(cli, "save_batchdata_cache", lambda cache: None)
 
     saved_seen = {}
     monkeypatch.setattr(cli, "save_seen_parcels", lambda seen: saved_seen.update(seen=seen))
@@ -422,3 +543,28 @@ def test_main_enrichment_attempts_floor_is_at_least_target_matches(monkeypatch):
     cli.main()
 
     assert len(enrich_calls) == 5  # raised to match target_matches, not left at 1
+
+
+def test_main_sorts_high_priority_leads_first(monkeypatch):
+    records = [_record(str(i), "100 Other St") for i in range(3)]
+    enrich_calls, saved_seen, saved_archive, saved_qualified, sent = _stub_main_dependencies(
+        monkeypatch, records, passing_acctids={"0", "1", "2"}
+    )
+
+    def fake_enrich(record, batchdata, cache=None):
+        enrich_calls.append(record["ACCTID"])
+        return cli.Lead(
+            acctid=record["ACCTID"],
+            address=record["ADDRESS"],
+            phone="555-0000",
+            low_margin=False,
+            high_priority=(record["ACCTID"] == "1"),  # only the middle one
+        )
+
+    monkeypatch.setattr(cli, "enrich_lead", fake_enrich)
+    monkeypatch.setenv("BATCHDATA_MAX_LEADS_PER_RUN", "3")
+    monkeypatch.setenv("BATCHDATA_MAX_ENRICHMENT_ATTEMPTS", "3")
+
+    cli.main()
+
+    assert [lead.acctid for lead in sent["leads"]] == ["1", "0", "2"]

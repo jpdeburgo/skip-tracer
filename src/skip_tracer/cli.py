@@ -24,6 +24,7 @@ from .batchdata_client import (
     PropertyAddress,
     flag_low_margin,
     max_allowable_offer,
+    payoff_profit_estimate,
 )
 from .archive import (
     load_lead_archive,
@@ -32,6 +33,7 @@ from .archive import (
     save_lead_archive,
     save_qualified_leads,
 )
+from .batchdata_cache import cached_call, load_batchdata_cache, save_batchdata_cache
 from .condition import condition_tier, estimate_repair_cost
 from .filtering import classify_owner_entity, contactability_tier, is_genuinely_absentee
 from .gmail_client import get_gmail_service, send_email
@@ -99,6 +101,9 @@ class Lead:
     arv_estimate: float | None = None
     repair_cost_estimate: float | None = None
     mao_estimate: float | None = None
+    total_lien_balance: float | None = None
+    payoff_profit: float | None = None
+    high_priority: bool = False
     low_margin: bool | None = None
     corporate_or_trust_owned: bool = False
     distress_flags: list[str] = field(default_factory=list)
@@ -157,7 +162,11 @@ def _year_from_iso_date(value: str | None) -> int | None:
         return None
 
 
-def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Lead:
+def enrich_lead(
+    record: dict[str, Any],
+    batchdata: BatchDataClient | None,
+    cache: dict[str, Any] | None = None,
+) -> Lead:
     """Adds skip-trace contact info, valuation, and a condition tier to an
     already-filtered MD iMap record. Degrades gracefully when BatchData is
     unavailable or a call fails.
@@ -168,7 +177,16 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
     TCPA flag cover this digest's compliance signal — see
     batchdata_client.py's module docstring for why the other three
     endpoints aren't called here.
+
+    `cache`, if given, is a batchdata_cache.py dict: a call already cached
+    for this record's ACCTID is reused instead of re-billing BatchData, and
+    `record` itself is stashed in the cache entry so a cached lead can be
+    fully replayed later (see scripts/reprocess_from_cache.py) without
+    needing MD iMap either.
     """
+    if cache is not None:
+        cache.setdefault(record["ACCTID"], {})["record"] = record
+
     lead = Lead(
         acctid=record["ACCTID"],
         address=record.get("ADDRESS", ""),
@@ -193,7 +211,9 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
             zipcode=record.get("PREMZIP", ""),
         )
         try:
-            skip_trace_result = batchdata.skip_trace(address)
+            skip_trace_result = cached_call(
+                cache, lead.acctid, "skip_trace", lambda: batchdata.skip_trace(address)
+            )
             person = (skip_trace_result.get("results") or {}).get("persons", [{}])[0]
             phones = person.get("phoneNumbers", [])
             if phones:
@@ -219,7 +239,9 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
             print(f"skip-trace failed for {lead.acctid}: {error}")
 
         try:
-            valuation_result = batchdata.lookup_valuation(address)
+            valuation_result = cached_call(
+                cache, lead.acctid, "valuation", lambda: batchdata.lookup_valuation(address)
+            )
             properties = (valuation_result.get("results") or {}).get("properties", [])
             if properties:
                 prop = properties[0]
@@ -240,6 +262,12 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
                 lead.corporate_or_trust_owned = bool(
                     quick_lists.get("corporateOwned") or quick_lists.get("trustOwned")
                 )
+                # "Free and clear" (no open liens) means totalOpenLienBalance
+                # is genuinely absent from BatchData's response rather than 0.
+                lien_balance = (prop.get("openLien") or {}).get("totalOpenLienBalance")
+                if lien_balance is None and quick_lists.get("freeAndClear"):
+                    lien_balance = 0
+                lead.total_lien_balance = lien_balance
         except Exception as error:  # noqa: BLE001
             print(f"valuation lookup failed for {lead.acctid}: {error}")
 
@@ -254,6 +282,11 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
         lead.mao_estimate = max_allowable_offer(
             lead.arv_estimate, lead.repair_cost_estimate
         )
+        if lead.total_lien_balance is not None:
+            lead.payoff_profit = payoff_profit_estimate(
+                lead.arv_estimate, lead.total_lien_balance, lead.repair_cost_estimate
+            )
+            lead.high_priority = lead.payoff_profit > 0
     return lead
 
 
@@ -309,6 +342,13 @@ def build_digest_body(leads: list[Lead]) -> str:
             if lead.mao_estimate is not None
             else ""
         )
+        payoff_line = (
+            f"  Owes: {_format_currency(lead.total_lien_balance)} | "
+            f"Profit if offer = payoff: {_format_currency(lead.payoff_profit)}"
+            f"{' — HIGH PRIORITY' if lead.high_priority else ''}\n"
+            if lead.total_lien_balance is not None
+            else ""
+        )
         distress_line = (
             f"  Distress signals: {', '.join(lead.distress_flags)}\n"
             if lead.distress_flags
@@ -319,8 +359,9 @@ def build_digest_body(leads: list[Lead]) -> str:
             if lead.last_sale_price is not None
             else ""
         )
+        priority_prefix = "[HIGH PRIORITY] " if lead.high_priority else ""
         body_lines.append(
-            f"{lead.address}\n"
+            f"{priority_prefix}{lead.address}\n"
             f"  Owner: {lead.owner_name} | Phone: {lead.phone or 'n/a'}{dnc_note}{tcpa_note} | "
             f"Email: {lead.email or 'n/a'} | "
             f"Signal: {lead.motivation_signal} | Condition: {lead.condition_tier}"
@@ -331,6 +372,7 @@ def build_digest_body(leads: list[Lead]) -> str:
             f"Est. repair cost: {_format_currency(lead.repair_cost_estimate)}{repair_note} | "
             f"BatchData estimated value (AVM): {_format_currency(lead.arv_estimate)}\n"
             f"{mao_line}"
+            f"{payoff_line}"
             f"  Zillow: {lead.zillow_link}\n"
         )
     return "\n".join(body_lines)
@@ -382,15 +424,19 @@ def main() -> None:
 
     # Enrichment is the billable part, so it stops as soon as target_matches
     # leads worth pursuing are found rather than enriching every gathered
-    # candidate regardless of outcome.
+    # candidate regardless of outcome. batchdata_cache records each raw
+    # response so a future change to enrich_lead()'s extraction logic can
+    # be replayed (scripts/reprocess_from_cache.py) without re-billing.
+    cache = load_batchdata_cache()
     enriched: list[Lead] = []
     leads: list[Lead] = []
     for record in candidates:
-        lead = enrich_lead(record, batchdata)
+        lead = enrich_lead(record, batchdata, cache=cache)
         enriched.append(lead)
         leads.extend(filter_worth_pursuing([lead]))
         if len(leads) >= target_matches:
             break
+    save_batchdata_cache(cache)
 
     unenriched = len(candidates) - len(enriched)
     if unenriched:
@@ -403,6 +449,10 @@ def main() -> None:
             f"Only found {len(leads)} of {target_matches} worth pursuing "
             f"after trying every gathered candidate this run."
         )
+
+    # High-priority leads (profitable even offering just the payoff amount)
+    # surface first in the digest.
+    leads.sort(key=lambda lead: not lead.high_priority)
 
     archive = load_lead_archive()
     record_leads(archive, enriched)

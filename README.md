@@ -187,13 +187,22 @@ Render dashboard before the first run:
    carries no signal to even guess from), `flag_low_margin()` flags when
    current value already meets/exceeds ARV, and — once both ARV and a
    repair estimate exist — `max_allowable_offer()` computes the 70%-rule
-   MAO. Also builds a Zillow search link (from `PREMCITY`, not `CITY` — MD
-   iMap's two city fields can disagree; see `zillow.py`'s docstring for the
-   confirmed real example). Degrades per-lead on any BatchData failure
-   rather than failing the run. Also captures the owner's email (preferring
-   one BatchData has actually tested/verified over an untested one) and a
-   `corporate_or_trust_owned` flag from `quickLists.corporateOwned`/
-   `trustOwned`.
+   MAO. When the same response's `openLien.totalOpenLienBalance` is also
+   present, `payoff_profit_estimate()` computes profit potential if the
+   offer were just enough to cover the owner's existing debt (a distressed
+   seller's real floor to avoid a deficiency at foreclosure) — a positive
+   result marks the lead `high_priority`, which the digest calls out and
+   sorts to the top, since it means there's profit even without asking the
+   owner to accept a below-market discount. Also builds a Zillow search
+   link (from `PREMCITY`, not `CITY` — MD iMap's two city fields can
+   disagree; see `zillow.py`'s docstring for the confirmed real example).
+   Degrades per-lead on any BatchData failure rather than failing the run.
+   Also captures the owner's email (preferring one BatchData has actually
+   tested/verified over an untested one) and a `corporate_or_trust_owned`
+   flag from `quickLists.corporateOwned`/`trustOwned`. `enrich_lead()`
+   takes an optional `cache` dict (`batchdata_cache.py`) — when given, a
+   skip-trace/valuation call already cached for that `ACCTID` is reused
+   instead of re-billing BatchData.
 5. **`cli.filter_worth_pursuing(leads)`** — drops leads `cli._exclusion_reasons()`
    flags as not worth pursuing: low/negative margin (`low_margin` true, or
    a computed MAO `<= $0`), no phone *and* no email, or corporate/trust
@@ -214,11 +223,18 @@ Render dashboard before the first run:
    the leads that passed the filter (i.e. were actually sent) to a second
    local-only file, `qualified_leads.json` — a standing record of "houses
    deemed profitable" independent of the digest email itself. Both files
-   are covered by "Local lead archive" below.
+   are covered by "Local lead archives" below.
+10. **`batchdata_cache.py`** — every skip-trace/valuation response gets
+    cached locally, keyed by `ACCTID`, alongside the exact MD iMap record
+    it came from. `scripts/reprocess_from_cache.py` replays every cached
+    lead through the *current* `enrich_lead()`/`filter_worth_pursuing()`
+    logic with zero new BatchData calls — run it after changing what gets
+    extracted or how a lead is judged, to backfill `leads_archive.json`/
+    `qualified_leads.json` without re-paying for leads already fetched.
 
 ## Local lead archives
 
-Two gitignored, local-only JSON files, both keyed by `ACCTID`:
+Three gitignored, local-only JSON files, all keyed by `ACCTID`:
 
 - `leads_archive.json` (path overridable via `LEADS_ARCHIVE_PATH`) — every
   enriched lead, pursued or not, so losing the digest email doesn't mean
@@ -226,15 +242,23 @@ Two gitignored, local-only JSON files, both keyed by `ACCTID`:
 - `qualified_leads.json` (path overridable via `QUALIFIED_LEADS_PATH`) —
   only the leads that passed `filter_worth_pursuing()` and were sent,
   accumulated across every run.
+- `batchdata_cache.json` (path overridable via `BATCHDATA_CACHE_PATH`) —
+  the *raw* skip-trace/valuation responses plus the MD iMap record for
+  every enriched lead, so `scripts/reprocess_from_cache.py` can re-derive
+  the two files above after a logic change without new BatchData spend.
+  Only covers leads enriched after this cache was introduced.
 
-**Neither file is ever synced to GitHub**, unlike `state.json`'s optional
-`ST_GITHUB_TOKEN` backing. Both contain real property owners' names, phone
-numbers, and email addresses — and this repo is **public**. Committing that
-would put third parties' contact info into permanent, public git history.
-If you need either to survive a host with an ephemeral disk (e.g. Render
-Cron without an attached persistent disk) between runs, point the relevant
-env var at a mounted persistent disk there — don't route either through
-GitHub unless you first make this repo private.
+**None of these files is ever synced to GitHub**, unlike `state.json`'s
+optional `ST_GITHUB_TOKEN` backing. All three contain real property owners'
+names, phone numbers, and email addresses (`batchdata_cache.json` more so —
+it's the complete raw response, including fields this pipeline doesn't even
+use, like income/net-worth demographics) — and this repo is **public**.
+Committing any of them would put third parties' contact info into
+permanent, public git history.
+If you need any of them to survive a host with an ephemeral disk (e.g.
+Render Cron without an attached persistent disk) between runs, point the
+relevant env var at a mounted persistent disk there — don't route any of
+them through GitHub unless you first make this repo private.
 
 ## Releases
 
