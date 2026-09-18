@@ -24,3 +24,42 @@ services:
         sync: false
       - key: ST_GIT_BRANCH
         value: main
+      - key: DATABASE_URL
+        fromDatabase:
+          name: property_catalog
+          property: connectionString
+
+  # Kept as its own service, on its own schedule, because this is the only
+  # job that spends money. BatchData bills per property/search call, so it
+  # must never share a trigger with the free weekly digest -- a retry or a
+  # schedule change on the digest would otherwise silently buy more data.
+  # pull_maryland_leads.py additionally enforces a 30-day cooldown in the
+  # database, so an accidental extra run is a no-op rather than a charge.
+  - type: cron
+    name: skip-tracer-monthly-pull
+    runtime: python
+    schedule: "0 12 1 * *"
+    buildCommand: pip install pipenv && pipenv install --deploy --ignore-pipfile
+    startCommand: >-
+      PYTHONPATH=src pipenv run python scripts/pull_maryland_leads.py &&
+      PYTHONPATH=src pipenv run python scripts/score_leads.py --state MD &&
+      PYTHONPATH=src pipenv run python scripts/email_top_leads.py --limit 25
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GMAIL_CREDENTIALS_PATH
+        value: /etc/secrets/credentials.json
+      - key: GMAIL_TOKEN_PATH
+        value: /etc/secrets/token.json
+      - key: DIGEST_EMAIL_TO
+        sync: false
+      - key: BATCHDATA_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: property_catalog
+          property: connectionString
+
+databases:
+  - name: property_catalog
+    plan: basic-256mb

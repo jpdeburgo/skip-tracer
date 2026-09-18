@@ -11,6 +11,7 @@ google-auth-httplib2 = "*"
 google-auth-oauthlib = "*"
 transformers = "*"
 torch = "*"
+psycopg = {extras = ["binary"], version = "*"}
 
 [dev-packages]
 pytest = "*"

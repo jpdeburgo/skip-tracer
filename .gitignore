@@ -156,6 +156,7 @@ token.json
 leads_archive.json
 qualified_leads.json
 batchdata_cache.json
+batchdata_search_results/
 .venv
 env/
 venv/

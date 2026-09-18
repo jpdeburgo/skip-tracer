@@ -18,13 +18,20 @@ src/skip_tracer/
   zillow.py                  # zpid-free Zillow search link builder
   gmail_client.py              # Gmail OAuth + send (same pattern as job-finder/nw-deal-screener)
   state.py                      # seen-parcel persistence (local file or GitHub-backed)
+  database.py                    # Render Postgres: property catalog + lead CRUD
+  lead_scoring.py                 # motivation/profit/contactability call-priority model
   cli.py                          # gather -> filter -> enrich -> digest orchestration
 scripts/
   test_skip_trace.py               # manual BatchData verification (needs a funded wallet)
   test_valuation.py                 # manual BatchData verification (needs a funded wallet)
   verify_zillow_slug.py              # manual Zillow slug verification (no API key needed)
-tests/                                # pytest unit tests (no network/paid calls)
-main.py                                # `python main.py` == `python -m skip_tracer.cli`
+  pull_maryland_leads.py              # BILLABLE monthly property/search pull -> Postgres
+  import_search_results.py             # backfill saved JSON into Postgres (free)
+  score_leads.py                        # (re)score the catalog into `leads` (free)
+  manage_leads.py                        # lead CRUD: record call outcomes (free)
+  email_top_leads.py                      # email the top N Maryland leads (free)
+tests/                                     # pytest unit tests (no network/paid calls)
+main.py                                     # `python main.py` == `python -m skip_tracer.cli`
 ```
 
 `cli.py`'s `main()` is built from independently testable pieces:
@@ -85,6 +92,35 @@ makes 2 billable BatchData calls per lead (skip-trace + valuation), not 5 —
 see "Pipeline logic" below for why permits/DNC/TCPA don't need their own
 calls. Raise either cap only once you've confirmed per-lead cost and your
 actual match rate against your budget.
+
+### The `property/search` discovery path is separately billable
+
+`scripts/pull_maryland_leads.py` uses a *different* endpoint from the
+per-lead enrichment above, and it has its own guard rails:
+
+- Each call returns a **hard maximum of 25 properties** regardless of the
+  requested `take`. Full statewide MD coverage of the ~3,986 current
+  preforeclosure matches would need roughly 159 more calls.
+- A **30-day cooldown** is enforced in `batchdata_search_runs`, keyed on
+  `(query, quicklist)`. A second run inside the window is a no-op, not a
+  charge. The cooldown checks only *successful* runs, so a 403 doesn't lock
+  out a legitimate retry for a month.
+- Every response is written to disk **before** it is parsed, so a parsing
+  bug can never lose data you already paid for.
+- Failed calls are still recorded in `batchdata_search_runs`. A 403
+  "Insufficient balance" consumed a request cycle; logging it is what stops
+  a retry loop from quietly draining the wallet.
+
+One non-obvious trap: in the search response, `results.meta.results.resultsFound`
+is a **server-side count of matches**, while `resultCount` is how many
+properties were actually transmitted. `resultsFound: 279621` does not mean
+279,621 properties were downloaded — only 25 were. Don't confuse the two.
+
+Also verified the hard way: the `county` and `state` fields inside
+`searchCriteria` are **silently ignored**. A request for
+`{county: "Montgomery", state: "MD"}` returned properties in OK, FL, CA, MI
+and AK. The free-text `query` field (`"Maryland"`, `"Montgomery County, MD"`)
+is the only geofence that actually works.
 
 ## Test-First Checklist
 
@@ -231,6 +267,189 @@ Render dashboard before the first run:
     logic with zero new BatchData calls — run it after changing what gets
     extracted or how a lead is judged, to backfill `leads_archive.json`/
     `qualified_leads.json` without re-paying for leads already fetched.
+
+## Property catalog (Render Postgres)
+
+Everything BatchData `property/search` returns is persisted to a Render
+Postgres database so a paid call is made **once** and queried forever.
+
+Set `DATABASE_URL` in `.env` (gitignored) to the Render *external*
+connection string. On Render itself the two cron services pull it from the
+`property_catalog` database automatically via `fromDatabase`.
+
+### Schema
+
+| Object | Purpose |
+| --- | --- |
+| `batchdata_search_runs` | One row per paid API call, including failures, with the full raw response. This is both the audit trail and the backing store for the 30-day cooldown. |
+| `properties` | One row per distinct property we have paid for, plus the raw JSONB. |
+| `leads` | Mutable human workflow state: score, status, phone, notes, call history. |
+| `maryland_leads` | View: qualified MD leads joined to their property, best score first. |
+
+Three deliberate design choices:
+
+- **`properties` and `leads` are separate tables.** `properties` is what we
+  bought; `leads` is what we did about it. Re-running the scorer refreshes
+  every score column but never touches `status`, `notes`, `phone`, `email`,
+  or `last_contacted_at`, so a fresh monthly pull cannot erase the record of
+  a call that already happened.
+- **`maryland_leads` is a VIEW, not a table.** "MD leads that fit our
+  criteria" is a derived question, and a view can't drift out of sync with
+  its source data the way a copied table would.
+- **`upsert_property` refreshes `last_seen_at` but preserves
+  `first_seen_at`.** How long a property has been sitting in the catalog is
+  itself a signal: a preforeclosure that reappears month after month is an
+  owner who still hasn't solved their problem.
+
+### Monthly workflow
+
+```bash
+# 1. BILLABLE. Enforces a 30-day cooldown in the database; a second run
+#    inside the window is a no-op, not a charge.
+PYTHONPATH=src pipenv run python scripts/pull_maryland_leads.py
+
+# 2. Free. Re-score the whole catalog. Safe to run any time you change
+#    the weights in lead_scoring.py.
+PYTHONPATH=src pipenv run python scripts/score_leads.py --state MD
+
+# 3. Free. Email yourself the top 25 with per-lead call prep.
+PYTHONPATH=src pipenv run python scripts/email_top_leads.py --limit 25
+PYTHONPATH=src pipenv run python scripts/email_top_leads.py --dry-run   # preview
+```
+
+### Recording call outcomes
+
+```bash
+PYTHONPATH=src pipenv run python scripts/manage_leads.py list --limit 25
+PYTHONPATH=src pipenv run python scripts/manage_leads.py show 12
+PYTHONPATH=src pipenv run python scripts/manage_leads.py contact 12 --phone 240-555-0134
+PYTHONPATH=src pipenv run python scripts/manage_leads.py status 12 called --contacted \
+    --notes "Left voicemail, callback Tuesday"
+PYTHONPATH=src pipenv run python scripts/manage_leads.py stats
+```
+
+This is not busywork. The scoring weights below are a *reasoned hypothesis*,
+not a model fitted to conversion data, and `manage_leads.py stats` is the
+only thing that will ever turn them into something empirical.
+
+## Lead scoring — which 50 people to call
+
+Ranking purely by profit is wrong, and it's the mistake this model exists to
+avoid. **Profit is what a deal is worth *if* it closes; motivation is what
+decides whether it closes at all.** An owner with $1.2M of equity and no
+urgency will not sell at a wholesale price — they'll list it retail. So the
+blended score is scaled by a motivation factor, which keeps a high-equity,
+low-urgency lead from ever topping the call list.
+
+Each property scores 0-100 on three axes, and the blend is then scaled by
+two gating factors:
+
+| Axis | Weight | What it measures |
+| --- | --- | --- |
+| Motivation | 0.50 | Distress stage blended with independent signals |
+| Profit | 0.35 | Value minus full payoff, log-scaled |
+| Contactability | 0.15 | How likely we are to reach the decision-maker |
+
+| Gate | Effect | Why it multiplies instead of adding |
+| --- | --- | --- |
+| Motivation factor | 0.5x - 1.0x | A zero-urgency owner should sink, not average out |
+| Recency factor | 0.5x - 1.0x | A 10-month-old filing has usually already resolved |
+| Timing factor | 0.35x / 0.5x / 1.0x | Running out of clock invalidates the deal entirely |
+
+### Counter-intuitive calls, and why
+
+**Early foreclosure beats late.** The obvious model puts `activeAuction`
+and `noticeOfSale` at the top. That is wrong twice over. Maryland gives only
+10-30 days' notice of sale, which is not enough runway to skip-trace, reach
+an owner, negotiate, and close an assignment, so by that stage the deal is
+usually mechanically impossible rather than merely urgent. Arrears, trustee
+and legal fees also compound into the payoff as the case advances, so late
+stages are precisely where the equity we are scoring has already been eaten.
+In a judicial state like Maryland, the lis pendens / Order to Docket is the
+real entry point: the owner knows it is real, but there are still months of
+runway. `noticeOfLisPendens` and `noticeOfDefault` now score highest.
+
+**Tax default is treated as a stage, not a signal.** Tax debt is small
+relative to value (thousands) while mortgage debt is large relative to value
+(hundreds of thousands), so a tax-delinquent owner almost by construction
+still has a constructible spread. It is a motivation signal that does not
+simultaneously destroy the margin, which is exactly the failure mode of
+late-stage foreclosure. It is noisier though, since some owners simply
+forgot or are disputing the bill.
+
+**`expiredListing` outranks `failedListing`.** These are not synonyms. A
+failed listing was withdrawn *before* the contract expired; an expired one
+ran its full term. Verified against our own catalog: the single
+`expiredListing` property also carries `failedListing`, confirming expired
+is a strict subset. A withdrawn-but-unexpired listing may still owe a broker
+commission, and the owner may have decided not to sell at all. Neither flag
+co-occurs with `activeListing`/`onMarket` here, so neither is currently on
+the MLS -- `failedListing` just carries contract risk that `expiredListing`
+does not.
+
+**Bare `absenteeOwner` scores zero.** A content landlord is not a motivated
+seller. Absentee ownership only earns its keep stacked with real distress,
+which the other terms already capture.
+
+### Timing is a feasibility gate, not a preference
+
+BatchData ships real dates in `foreclosure`: `filingDate` is populated on
+100% of our Maryland catalog and `auctionDate` on 87%. This matters more
+than any weight, because **39 of our 48 Maryland properties have an auction
+date that has already passed.** Those owners have most likely already lost
+the house or resolved the case. Without this dimension the call list is
+mostly dead leads sorted by equity.
+
+One data-quality trap worth knowing: `auctionDate` is sometimes a stale
+record carried from an older foreclosure. Our top-ranked lead was filed in
+2026 but carried a 2014 `auctionDate`. Any `auctionDate` earlier than its
+`filingDate` is discarded rather than trusted.
+
+### Profit uses payoff, not loan balance
+
+- **Profit is log-scaled.** Maryland spreads run from about $40k to $1.2M. A
+  linear scale pinned every Bethesda and Annapolis lead at 100 and produced
+  a nine-way tie. Log scaling also encodes a real effect: $50k to $150k of
+  spread matters far more than $900k to $1M, because expensive houses have a
+  much smaller cash-buyer pool and are harder to assign.
+- **`totalOpenLienBalance` is the loan balance, not the payoff.** Missed
+  payments, late fees, trustee costs and advanced taxes accrue on top and
+  grow with the stage of the case, so we apply an arrears haircut that
+  scales with stage. Involuntary liens (tax liens, judgments, mechanic's
+  liens) live in a *separate* BatchData field and are added on top.
+- **Qualification runs the 70% rule directly** (`payoff <= 0.70 x ARV -
+  repairs - fee`) rather than thresholding equity percent, which is only a
+  proxy for it. Equity percent is used solely as a fallback when lien data
+  is missing.
+
+Two honest caveats: `estimatedValue` is an *as-is* AVM but the 70% rule
+wants ARV, so we approximate `ARV = value + repairs`; and repair cost is not
+knowable from a search result, so a flat 15% is assumed. A property needing
+a gut renovation will look better here than it is.
+
+### What this produces
+
+Of 48 Maryland preforeclosures, **7 qualify**. The other 41 break down as 15
+failing the 70% rule, 8 with no spread at all, 9 corporate-owned, and 9
+already listed. That roughly 15% qualify rate is the useful number for
+planning: reaching ~50 callable leads needs about 340 catalogued properties,
+i.e. roughly 14 more billable pages, not 159.
+
+### On "1 in 50 calls"
+
+Published funnels put 1 deal per 50 *dials* far outside even the optimistic
+bound; a realistic range is 1 per 200-600 dials. **1 deal per 50 actual
+conversations is achievable**, and that is the number worth targeting. The
+distinction matters for expectations: dials-to-contact runs 10-15%, and
+reported experience is that deals typically come from the third through
+fifth touch, not the first. Scoring decides *who* to call and in what order;
+it does not change the arithmetic of how many dials that takes.
+
+**These weights are still not fitted to conversion data.** They are now
+informed by external research and validated against this catalog's actual
+data, but no deal has closed through this pipeline yet. Record outcomes with
+`manage_leads.py` and revisit them once there is a real funnel to fit
+against.
 
 ## Local lead archives
 

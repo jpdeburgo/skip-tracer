@@ -36,6 +36,12 @@ scripts/test_skip_trace.py and scripts/test_valuation.py:
   outreach). Those two methods stay available here for a future workflow
   that actually places calls/texts, per BatchData's own compliance
   guidance to check every number immediately before outreach.
+
+search_properties() is also VERIFIED live (see its own docstring for the
+full detail): geofencing only works via a free-text `query` field (e.g.
+"Montgomery County, MD"), not `county`/`state` fields, which are silently
+ignored. Each response caps at 25 properties regardless of `take`;
+paginate with `skip`. Not yet wired into cli.py's pipeline.
 """
 
 from __future__ import annotations
@@ -118,6 +124,58 @@ class BatchDataClient:
             },
         )
 
+    def search_properties(
+        self,
+        search_criteria: dict[str, Any],
+        skip: int = 0,
+        take: int = 50,
+    ) -> dict[str, Any]:
+        """Filterable, nationwide property search (e.g. every currently
+        `preforeclosure`-flagged property in Montgomery County, MD) — both
+        request and response shapes are now confirmed against a real,
+        funded account (see scripts/test_property_search.py and the saved
+        JSON under batchdata_search_results/).
+
+        Confirmed live:
+        - `skip`/`take` are top-level fields, not nested under an
+          `options` key.
+        - `quickLists` must be an array of strings (e.g.
+          `["preforeclosure"]`), not `{flag: True}` — BatchData returns a
+          `400 "quickLists should be an array of strings"` error otherwise.
+        - `county`/`state` fields in `search_criteria` are silently
+          ignored — a request with `{"county": "Montgomery", "state":
+          "MD", "quickLists": [...]}` returned properties scattered across
+          a dozen unrelated states nationwide (279,621 matches), not
+          Montgomery County, MD. Do NOT use `county`/`state` fields.
+        - The free-text `query` field (documented for a "city, state"
+          form, e.g. `"Denver, CO"`) is the one confirmed way to geofence
+          results: `{"query": "Montgomery County, MD", "quickLists":
+          [...]}` returned all 25 sample properties correctly located in
+          Montgomery County, MD (474 total matches reported in
+          `results.meta.results.resultsFound`).
+        - The response caps `properties` at 25 per call regardless of a
+          higher `take` — paginate with `skip` to get more than 25.
+        - Each property already includes `owner.fullName` and
+          `owner.mailingAddress` plus the same `quickLists` flags
+          `cli.py`'s `_distress_flags()`/`_in_preforeclosure()` already
+          read from `lookup_valuation()` responses — a skip-trace call is
+          still needed for phone/email, but not to identify the owner by
+          name/mailing address.
+
+        Do not wire this into cli.py's pipeline yet — that's a separate,
+        deliberate step once a `fetch_preforeclosure_leads()`-style
+        integration is designed (this method only makes the raw call).
+
+        This is a bulk/billable call by design (that's the entire point —
+        discovering brand-new addresses instead of looking up ones already
+        known) — keep `take` small while experimenting; each call to a
+        funded account has a real cost regardless of outcome.
+        """
+        return self._post(
+            "property/search",
+            {"searchCriteria": search_criteria, "skip": skip, "take": take},
+        )
+
     def get_property_permits(self, address: PropertyAddress) -> list[dict[str, Any]]:
         """Not called by cli.enrich_lead() — lookup_valuation()'s embedded
         permit summary covers condition_tier()'s needs at no extra cost.
@@ -180,3 +238,45 @@ def payoff_profit_estimate(
     number to actually offer.
     """
     return arv_estimate - total_lien_balance - repair_cost
+
+
+def rank_properties_by_profit(
+    properties: list[dict[str, Any]], top_n: int | None = None
+) -> list[dict[str, Any]]:
+    """Sorts raw property/search results (see
+    BatchDataClient.search_properties()) by estimated payoff profit —
+    valuation.estimatedValue minus openLien.totalOpenLienBalance — so a
+    bulk search response already paid for can be triaged for the most
+    promising candidates without any further billable calls.
+
+    No repair-cost estimate is available from a search result (that comes
+    from condition_tier(), which needs the permit history a per-address
+    lookup_valuation() call returns, not this bulk endpoint) — so this
+    reuses payoff_profit_estimate() with repair_cost=0, same rationale as
+    that function's own docstring: a prioritization signal, not a number
+    to actually offer. A property missing either estimatedValue or
+    totalOpenLienBalance is sorted last (unknown, not assumed zero-profit)
+    rather than dropped, since search results already cost money and
+    shouldn't quietly disappear from a review list.
+
+    Adds a `_estimated_profit` key (None if unknown) to each returned dict
+    so callers/scripts can see the number that was sorted on.
+    """
+
+    def _profit(prop: dict[str, Any]) -> float | None:
+        estimated_value = (prop.get("valuation") or {}).get("estimatedValue")
+        lien_balance = (prop.get("openLien") or {}).get("totalOpenLienBalance")
+        if estimated_value is None or lien_balance is None:
+            return None
+        return payoff_profit_estimate(estimated_value, lien_balance, 0.0)
+
+    ranked = []
+    for prop in properties:
+        annotated = dict(prop)
+        annotated["_estimated_profit"] = _profit(prop)
+        ranked.append(annotated)
+
+    ranked.sort(
+        key=lambda p: (p["_estimated_profit"] is None, -(p["_estimated_profit"] or 0))
+    )
+    return ranked[:top_n] if top_n is not None else ranked

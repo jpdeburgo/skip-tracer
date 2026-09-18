@@ -203,6 +203,69 @@ Typical paginated/search response shape:
 
 Full reference: <https://developer.batchdata.com/>.
 
+## Lead scoring and the property catalog
+
+Paid `property/search` results are persisted to a Render Postgres database
+(`src/skip_tracer/database.py`) so a paid call is made once and queried
+forever. `src/skip_tracer/lead_scoring.py` turns that catalog into a ranked
+call list. See the README's "Property catalog" and "Lead scoring" sections
+for the schema and the full rationale.
+
+When advising on prioritization, hold these lines:
+
+- **Never rank by profit alone.** Profit is what a deal is worth *if* it
+  closes; motivation decides whether it closes at all. A $1.2M-equity owner
+  with no urgency lists retail — they are not a wholesale lead. Motivation
+  carries the largest weight (0.50) for exactly this reason.
+- **Early foreclosure beats late, which is counter-intuitive.** Maryland
+  gives only 10-30 days' notice of sale — not enough runway to skip-trace,
+  reach the owner, negotiate and close an assignment. Arrears and trustee
+  fees also compound into the payoff as the case advances, so late stages
+  are where the equity has already been eaten. In a judicial state the lis
+  pendens / Order to Docket is the real entry point. Do not advise leading
+  with auction-scheduled leads.
+- **Timing is a feasibility gate, not a preference.** `foreclosure.filingDate`
+  (100% populated here) and `auctionDate` (87%) are real and decisive: 39 of
+  48 Maryland properties have an auction date already in the past. Treat an
+  `auctionDate` earlier than its `filingDate` as a stale record and discard
+  it — one property filed in 2026 carries a 2014 auction date.
+- **`activeListing`/`pendingListing` disqualify. `expiredListing` outranks
+  `failedListing`.** A failed listing was withdrawn *before* contract expiry
+  and may still owe commission; an expired one ran its term and is clean.
+  Verified here: expired is a strict subset of failed.
+- **Bare `absenteeOwner` is not a motivation signal.** A content landlord is
+  not a motivated seller; it only counts stacked with real distress.
+- **Tax default is a parallel distress track, not an additive signal.** Tax
+  debt is small relative to value while mortgage debt is large, so a
+  tax-delinquent owner usually still has a constructible spread. Noisier
+  though — some owners simply forgot or are disputing the bill.
+- **Involuntary liens (tax liens, judgments, mechanic's liens) are NOT in
+  `totalOpenLienBalance`.** They sit in `involuntaryLien.liens[]` and still
+  have to be cleared at closing. Neither is `totalOpenLienBalance` the
+  payoff — arrears, late fees and legal costs accrue on top and grow with
+  the stage.
+- **Qualify with the 70% rule, not an equity percentage.**
+  `payoff <= 0.70 x ARV - repairs - fee` is the real constraint; equity
+  percent is only a proxy used when lien data is missing.
+- **`preforeclosure` is the umbrella flag.** Across the catalog, every
+  `noticeOfSale`, `noticeOfLisPendens`, `noticeOfDefault`, `activeAuction`
+  and `taxDefault` property also carried `preforeclosure`, so a single
+  `["preforeclosure"]` search captures all of them. Caveat: that sample was
+  itself filtered on `preforeclosure`, so a tax-delinquent property with no
+  foreclosure filing could still be missed. Treat as a strong heuristic, not
+  a proven identity.
+- **Correct the "1 in 50 calls" expectation when it comes up.** That is
+  achievable per *conversation*, not per *dial*. Published funnels put a
+  deal at roughly 1 per 200-600 dials, with 10-15% dials-to-contact, and
+  deals typically landing on the third through fifth touch. Scoring changes
+  who to call and in what order, not that arithmetic.
+- **The weights are a hypothesis, not a fitted model.** Say so plainly when
+  asked. They are now informed by external research and validated against
+  the real catalog, but no deal has closed through this pipeline yet.
+  `scripts/manage_leads.py stats` is the feedback loop that would make them
+  empirical; until there's a real funnel, don't present the rankings as
+  validated.
+
 ## Leverage framing
 
 A property sitting 5+ months on market typically can't pass a lender's
