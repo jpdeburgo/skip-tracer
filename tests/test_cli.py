@@ -29,6 +29,7 @@ REAL_VALUATION_RESPONSE = {
             {
                 "valuation": {"estimatedValue": 1512714},
                 "owner": {"fullName": "Atalay Evinch; Gunay Evinch"},
+                "sale": {"lastSale": {"price": 1119500, "saleDate": "2006-10-16T00:00:00.000Z"}},
                 "permit": {
                     "permitCount": 2,
                     "latestDate": "2010-07-28T00:00:00.000Z",
@@ -146,6 +147,8 @@ def test_enrich_lead_parses_real_batchdata_response_shapes():
     assert lead.distress_flags == ["High Equity"]  # only true flag in the real quickLists
     assert lead.email == "gevinch@saltzmanevinch.com"  # tested email preferred over untested
     assert lead.corporate_or_trust_owned is False
+    assert lead.last_sale_price == 1119500
+    assert lead.last_sale_date == "2006"
 
 
 def test_distress_flags_only_includes_true_flags_in_label_order():
@@ -220,18 +223,29 @@ def test_build_digest_body_includes_valuation_and_mao_figures():
         repair_cost_estimate=40_000,
         mao_estimate=205_000,
         distress_flags=["Vacant", "Tax Default"],
+        last_sale_price=275_000,
+        last_sale_date="2015",
         zillow_link="https://example.com",
     )
     body = cli.build_digest_body([lead])
     assert "LOW MARGIN" in body
     assert "DNC" in body
     assert "Jane Doe" in body
-    assert "$300,000" in body  # current value (assessed_value)
+    assert "$300,000" in body  # county-assessed value
     assert "$40,000" in body  # repair cost estimate
-    assert "$350,000" in body  # potential ARV
+    assert "$350,000" in body  # BatchData estimated value (AVM)
     assert "$205,000" in body  # max allowable offer
     assert "rule-of-thumb" in body
     assert "Distress signals: Vacant, Tax Default" in body
+    assert "Last sale: $275,000 (2015)" in body
+
+
+def test_build_digest_body_omits_last_sale_line_when_unknown():
+    lead = cli.Lead(acctid="1", address="1 Main St", zillow_link="https://example.com")
+
+    body = cli.build_digest_body([lead])
+
+    assert "Last sale" not in body
 
 
 def test_build_digest_body_shows_unknown_for_missing_dollar_figures():
@@ -327,12 +341,19 @@ def _stub_main_dependencies(monkeypatch, records, passing_acctids):
 
     saved_seen = {}
     monkeypatch.setattr(cli, "save_seen_parcels", lambda seen: saved_seen.update(seen=seen))
+
+    # record_leads() itself is real (pure, no I/O) - only the load/save
+    # boundary is mocked, so each starts from {} and its final contents are
+    # captured via the save_* calls.
     monkeypatch.setattr(cli, "load_lead_archive", lambda: {})
-    archived = []
+    saved_archive = {}
+    monkeypatch.setattr(cli, "save_lead_archive", lambda arch: saved_archive.update(arch))
+
+    monkeypatch.setattr(cli, "load_qualified_leads", lambda: {})
+    saved_qualified = {}
     monkeypatch.setattr(
-        cli, "record_leads", lambda arch, leads: archived.extend(leads) or arch
+        cli, "save_qualified_leads", lambda qualified: saved_qualified.update(qualified)
     )
-    monkeypatch.setattr(cli, "save_lead_archive", lambda arch: None)
 
     sent = {}
     monkeypatch.setattr(
@@ -345,12 +366,12 @@ def _stub_main_dependencies(monkeypatch, records, passing_acctids):
     monkeypatch.delenv("BATCHDATA_API_KEY", raising=False)
     monkeypatch.setattr(sys, "argv", ["skip_tracer.cli"])
 
-    return enrich_calls, saved_seen, archived, sent
+    return enrich_calls, saved_seen, saved_archive, saved_qualified, sent
 
 
 def test_main_stops_enriching_once_target_matches_found(monkeypatch):
     records = [_record(str(i), "100 Other St") for i in range(10)]
-    enrich_calls, saved_seen, archived, sent = _stub_main_dependencies(
+    enrich_calls, saved_seen, saved_archive, saved_qualified, sent = _stub_main_dependencies(
         monkeypatch, records, passing_acctids={"0", "1"}
     )
     monkeypatch.setenv("BATCHDATA_MAX_LEADS_PER_RUN", "2")
@@ -363,12 +384,14 @@ def test_main_stops_enriching_once_target_matches_found(monkeypatch):
     assert enrich_calls == ["0", "1"]
     assert [lead.acctid for lead in sent["leads"]] == ["0", "1"]
     assert saved_seen["seen"] == {"0", "1"}
-    assert [lead.acctid for lead in archived] == ["0", "1"]
+    assert list(saved_archive.keys()) == ["0", "1"]
+    # Both enriched leads passed, so both land in qualified_leads.json too.
+    assert list(saved_qualified.keys()) == ["0", "1"]
 
 
 def test_main_stops_at_max_attempts_when_match_rate_is_low(monkeypatch, capsys):
     records = [_record(str(i), "100 Other St") for i in range(10)]
-    enrich_calls, saved_seen, archived, sent = _stub_main_dependencies(
+    enrich_calls, saved_seen, saved_archive, saved_qualified, sent = _stub_main_dependencies(
         monkeypatch, records, passing_acctids={"9"}  # only the last one passes
     )
     monkeypatch.setenv("BATCHDATA_MAX_LEADS_PER_RUN", "5")
@@ -382,6 +405,10 @@ def test_main_stops_at_max_attempts_when_match_rate_is_low(monkeypatch, capsys):
     assert [lead.acctid for lead in sent["leads"]] == ["9"]
     assert saved_seen["seen"] == set(str(i) for i in range(10))
     assert "Only found 1 of 5 worth pursuing" in capsys.readouterr().out
+    # All 10 tried candidates are archived, but only the 1 that passed
+    # lands in qualified_leads.json.
+    assert len(saved_archive) == 10
+    assert list(saved_qualified.keys()) == ["9"]
 
 
 def test_main_enrichment_attempts_floor_is_at_least_target_matches(monkeypatch):

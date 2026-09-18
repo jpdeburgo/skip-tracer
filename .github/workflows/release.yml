@@ -1,12 +1,12 @@
 name: Release
 
-# Both a direct commit to main and a merged PR land as a single push event
-# here — no separate PR-merge trigger needed. A push made by this workflow's
-# own GITHUB_TOKEN doesn't re-trigger this workflow (GitHub suppresses that
-# to avoid infinite loops), so no extra guard is needed against the release
-# commit re-running this job.
+# Fires only when a PR targeting main is actually merged (not just closed).
+# A direct push to main - e.g. state.json's own "Update seen parcels"
+# commits, made straight to main by the pipeline itself via the GitHub
+# Contents API - never goes through a PR, so it never triggers this.
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: [main]
 
 permissions:
@@ -18,11 +18,13 @@ concurrency:
 
 jobs:
   release:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
           persist-credentials: true
 

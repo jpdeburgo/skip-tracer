@@ -25,7 +25,13 @@ from .batchdata_client import (
     flag_low_margin,
     max_allowable_offer,
 )
-from .archive import load_lead_archive, record_leads, save_lead_archive
+from .archive import (
+    load_lead_archive,
+    load_qualified_leads,
+    record_leads,
+    save_lead_archive,
+    save_qualified_leads,
+)
 from .condition import condition_tier, estimate_repair_cost
 from .filtering import classify_owner_entity, contactability_tier, is_genuinely_absentee
 from .gmail_client import get_gmail_service, send_email
@@ -88,6 +94,8 @@ class Lead:
     entity_type: str = "individual"
     condition_tier: str = "unassessed"
     assessed_value: float | None = None
+    last_sale_price: float | None = None
+    last_sale_date: str | None = None
     arv_estimate: float | None = None
     repair_cost_estimate: float | None = None
     mao_estimate: float | None = None
@@ -216,6 +224,10 @@ def enrich_lead(record: dict[str, Any], batchdata: BatchDataClient | None) -> Le
             if properties:
                 prop = properties[0]
                 lead.arv_estimate = prop.get("valuation", {}).get("estimatedValue")
+                last_sale = (prop.get("sale") or {}).get("lastSale") or {}
+                lead.last_sale_price = last_sale.get("price")
+                last_sale_year = _year_from_iso_date(last_sale.get("saleDate"))
+                lead.last_sale_date = str(last_sale_year) if last_sale_year else None
                 owner_full_name = prop.get("owner", {}).get("fullName")
                 if owner_full_name:
                     lead.owner_name = owner_full_name
@@ -252,7 +264,7 @@ def _exclusion_reasons(lead: Lead) -> list[str]:
     there's nothing to judge it against."""
     reasons = []
     if lead.low_margin is True:
-        reasons.append("low margin (current value >= ARV)")
+        reasons.append("low margin (assessed value >= BatchData estimated value)")
     if lead.mao_estimate is not None and lead.mao_estimate <= 0:
         reasons.append("max allowable offer <= $0")
     if not lead.phone and not lead.email:
@@ -286,7 +298,7 @@ def build_digest_body(leads: list[Lead]) -> str:
     for lead in leads:
         margin_note = ""
         if lead.low_margin is True:
-            margin_note = " | LOW MARGIN (current value >= ARV estimate)"
+            margin_note = " | LOW MARGIN (assessed value >= BatchData estimate)"
         dnc_note = " | DNC" if lead.do_not_call else ""
         tcpa_note = " | TCPA RISK" if lead.tcpa_risk else ""
         repair_note = (
@@ -302,6 +314,11 @@ def build_digest_body(leads: list[Lead]) -> str:
             if lead.distress_flags
             else ""
         )
+        last_sale_line = (
+            f"  Last sale: {_format_currency(lead.last_sale_price)} ({lead.last_sale_date})\n"
+            if lead.last_sale_price is not None
+            else ""
+        )
         body_lines.append(
             f"{lead.address}\n"
             f"  Owner: {lead.owner_name} | Phone: {lead.phone or 'n/a'}{dnc_note}{tcpa_note} | "
@@ -309,9 +326,10 @@ def build_digest_body(leads: list[Lead]) -> str:
             f"Signal: {lead.motivation_signal} | Condition: {lead.condition_tier}"
             f"{margin_note}\n"
             f"{distress_line}"
-            f"  Current value: {_format_currency(lead.assessed_value)} | "
+            f"{last_sale_line}"
+            f"  County-assessed value: {_format_currency(lead.assessed_value)} | "
             f"Est. repair cost: {_format_currency(lead.repair_cost_estimate)}{repair_note} | "
-            f"Potential ARV: {_format_currency(lead.arv_estimate)}\n"
+            f"BatchData estimated value (AVM): {_format_currency(lead.arv_estimate)}\n"
             f"{mao_line}"
             f"  Zillow: {lead.zillow_link}\n"
         )
@@ -389,6 +407,10 @@ def main() -> None:
     archive = load_lead_archive()
     record_leads(archive, enriched)
     save_lead_archive(archive)
+
+    qualified = load_qualified_leads()
+    record_leads(qualified, leads)
+    save_qualified_leads(qualified)
 
     if leads and not args.no_email:
         send_weekly_digest(leads, os.environ["DIGEST_EMAIL_TO"])

@@ -23,6 +23,30 @@ def test_save_then_load_round_trips(tmp_path, monkeypatch):
     assert archive.load_lead_archive() == {"1": {"address": "100 Main St"}}
 
 
+def test_qualified_leads_missing_file_returns_empty_dict(tmp_path, monkeypatch):
+    monkeypatch.setenv("QUALIFIED_LEADS_PATH", str(tmp_path / "qualified_leads.json"))
+    assert archive.load_qualified_leads() == {}
+
+
+def test_qualified_leads_save_then_load_round_trips(tmp_path, monkeypatch):
+    monkeypatch.setenv("QUALIFIED_LEADS_PATH", str(tmp_path / "qualified_leads.json"))
+
+    archive.save_qualified_leads({"1": {"address": "100 Main St"}})
+
+    assert archive.load_qualified_leads() == {"1": {"address": "100 Main St"}}
+
+
+def test_lead_archive_and_qualified_leads_are_independent_files(tmp_path, monkeypatch):
+    monkeypatch.setenv("LEADS_ARCHIVE_PATH", str(tmp_path / "leads_archive.json"))
+    monkeypatch.setenv("QUALIFIED_LEADS_PATH", str(tmp_path / "qualified_leads.json"))
+
+    archive.save_lead_archive({"1": {"address": "not pursued"}})
+    archive.save_qualified_leads({"2": {"address": "pursued"}})
+
+    assert archive.load_lead_archive() == {"1": {"address": "not pursued"}}
+    assert archive.load_qualified_leads() == {"2": {"address": "pursued"}}
+
+
 def test_record_leads_adds_entries_keyed_by_acctid_with_timestamp():
     leads = [
         _FakeLead(acctid="1", address="100 Main St"),
