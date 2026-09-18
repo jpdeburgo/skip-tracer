@@ -209,32 +209,43 @@ Render dashboard before the first run:
 8. **`archive.record_leads()` / `save_lead_archive()`** — writes every
    enriched lead's full data (Zillow link, owner name/phone/email,
    valuation, distress flags, condition) to a local-only `leads_archive.json`,
-   keyed by `ACCTID`, regardless of whether it passed the filter in step 5 —
-   so losing the digest email doesn't mean re-paying BatchData to recover
-   the data. See "Local lead archive" below for why this is deliberately
-   never synced to GitHub.
+   keyed by `ACCTID`, regardless of whether it passed the filter in step 5.
+9. **`archive.record_leads()` / `save_qualified_leads()`** — writes only
+   the leads that passed the filter (i.e. were actually sent) to a second
+   local-only file, `qualified_leads.json` — a standing record of "houses
+   deemed profitable" independent of the digest email itself. Both files
+   are covered by "Local lead archive" below.
 
-## Local lead archive
+## Local lead archives
 
-`leads_archive.json` (gitignored, path overridable via `LEADS_ARCHIVE_PATH`)
-holds every enriched lead's full data locally, so a lost or deleted digest
-email doesn't mean re-paying BatchData to get that data back.
+Two gitignored, local-only JSON files, both keyed by `ACCTID`:
 
-**This file is deliberately never synced to GitHub**, unlike `state.json`'s
-optional `ST_GITHUB_TOKEN` backing. It contains real property owners' names,
-phone numbers, and email addresses — and this repo is **public**. Committing
-that would put third parties' contact info into permanent, public git
-history. If you need this archive to survive a host with an ephemeral disk
-(e.g. Render Cron without an attached persistent disk) between runs, point
-`LEADS_ARCHIVE_PATH` at a mounted persistent disk there — don't route it
-through GitHub unless you first make this repo private.
+- `leads_archive.json` (path overridable via `LEADS_ARCHIVE_PATH`) — every
+  enriched lead, pursued or not, so losing the digest email doesn't mean
+  re-paying BatchData to recover the data.
+- `qualified_leads.json` (path overridable via `QUALIFIED_LEADS_PATH`) —
+  only the leads that passed `filter_worth_pursuing()` and were sent,
+  accumulated across every run.
+
+**Neither file is ever synced to GitHub**, unlike `state.json`'s optional
+`ST_GITHUB_TOKEN` backing. Both contain real property owners' names, phone
+numbers, and email addresses — and this repo is **public**. Committing that
+would put third parties' contact info into permanent, public git history.
+If you need either to survive a host with an ephemeral disk (e.g. Render
+Cron without an attached persistent disk) between runs, point the relevant
+env var at a mounted persistent disk there — don't route either through
+GitHub unless you first make this repo private.
 
 ## Releases
 
 [`.github/workflows/release.yml`](.github/workflows/release.yml) runs
 [python-semantic-release](https://python-semantic-release.readthedocs.io/)
-on every push to `main` (a direct commit or a merged PR both land as one
-push event). It reads [Conventional Commits](https://www.conventionalcommits.org/)
+only when a PR targeting `main` is actually merged — not on a direct push
+to `main`. This is deliberate: `state.json`'s "Update seen parcels" commits
+(and `leads_archive.json`-adjacent bookkeeping) are pushed straight to
+`main` by the pipeline itself via the GitHub Contents API, and shouldn't
+trigger a version bump. **A direct commit to `main` — including a manual
+one — never releases; only a merged PR does.** It reads [Conventional Commits](https://www.conventionalcommits.org/)
 — `feat:` -> minor bump, `fix:` -> patch bump, `BREAKING CHANGE:` (or
 `feat!:`/`fix!:`) -> major bump, `chore:`/`docs:`/`refactor:`/etc. -> no
 release — bumps `__version__` in

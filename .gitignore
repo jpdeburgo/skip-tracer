@@ -154,6 +154,7 @@ activemq-data/
 credentials.json
 token.json
 leads_archive.json
+qualified_leads.json
 .venv
 env/
 venv/
