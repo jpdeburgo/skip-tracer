@@ -302,6 +302,74 @@ def test_enrich_lead_reuses_cached_batchdata_responses():
     assert cache["1"]["record"] == record
 
 
+def test_call_script_leads_with_probate_angle_for_inherited_flag():
+    lead = cli.Lead(acctid="1", address="1 Main St", distress_flags=["Inherited"])
+
+    lines = cli.call_script(lead)
+
+    assert any("do NOT open with" in line and "we pay cash" in line for line in lines)
+    assert any(line.startswith("Price:") for line in lines)
+    assert any(line.startswith("Dealbreaker check:") for line in lines)
+
+
+def test_call_script_leads_with_probate_angle_for_non_sale_transfer_signal():
+    lead = cli.Lead(
+        acctid="1",
+        address="1 Main St",
+        motivation_signal="Non-sale transfer (possible inheritance)",
+    )
+
+    lines = cli.call_script(lead)
+
+    assert any("do NOT open with" in line for line in lines)
+
+
+def test_call_script_leads_with_foreclosure_urgency_for_preforeclosure_flag():
+    lead = cli.Lead(acctid="1", address="1 Main St", distress_flags=["Pre-Foreclosure"])
+
+    lines = cli.call_script(lead)
+
+    assert any("timeline" in line.lower() for line in lines[:1])
+
+
+def test_call_script_falls_back_to_general_opener_with_no_signals():
+    lead = cli.Lead(acctid="1", address="1 Main St")
+
+    lines = cli.call_script(lead)
+
+    assert lines[0].startswith("Opener: General absentee-owner opener")
+
+
+def test_call_script_flags_dnc_and_tcpa_as_call_only():
+    lead = cli.Lead(acctid="1", address="1 Main St", do_not_call=True)
+
+    lines = cli.call_script(lead)
+
+    assert any("call only, do not text" in line for line in lines)
+
+
+def test_call_script_notes_no_consent_when_not_dnc_or_tcpa():
+    lead = cli.Lead(acctid="1", address="1 Main St")
+
+    lines = cli.call_script(lead)
+
+    assert any("No consent on file for texting" in line for line in lines)
+
+
+def test_build_digest_body_includes_call_prep_section():
+    lead = cli.Lead(
+        acctid="1",
+        address="1 Main St",
+        distress_flags=["Inherited"],
+        zillow_link="https://example.com",
+    )
+
+    body = cli.build_digest_body([lead])
+
+    assert "Call prep (Price / Condition / Motivation / Time):" in body
+    assert "we pay cash" in body
+
+
 def test_build_digest_body_includes_valuation_and_mao_figures():
     lead = cli.Lead(
         acctid="1",

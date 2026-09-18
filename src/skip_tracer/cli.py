@@ -82,6 +82,65 @@ def _distress_flags(quick_lists: dict[str, Any]) -> list[str]:
     return [label for key, label in DISTRESS_FLAG_LABELS.items() if quick_lists.get(key)]
 
 
+# Opener angle by distress signal, checked in priority order (most
+# time-sensitive/emotionally-specific first) — matches the field lesson
+# that "we pay cash" is the wrong opener for probate/inherited sellers
+# (who care more about avoiding capital gains and probate hassle than
+# cash speed) and that foreclosure/tax-default sellers respond better to
+# a timeline-first opener than a generic pitch. Falls through to a
+# generic absentee-owner opener when nothing more specific applies.
+_INHERITED_OPENER = (
+    "Likely inherited/probate property — do NOT open with \"we pay cash.\" "
+    "Boomer/inheriting sellers usually care more about avoiding capital "
+    "gains and the hassle of probate than about cash speed. Lead with "
+    "\"we buy probate/inherited homes and handle the paperwork\" instead."
+)
+_OPENER_BY_SIGNAL: list[tuple[str, str]] = [
+    ("Notice of Sale", "Foreclosure sale is scheduled — lead with the timeline, not price: how much runway do they have left, and would a fast, certain close before the sale date help them avoid a foreclosure on their credit?"),
+    ("Notice of Default", "Pre-foreclosure/default notice on file — same urgency angle: focus on avoiding a foreclosure, not on beating another offer."),
+    ("Notice of Lis Pendens", "Active lis pendens (litigation) — tread carefully; confirm they're still the decision-maker before pitching anything."),
+    ("Pre-Foreclosure", "Pre-foreclosure — lead with timeline/certainty, not price."),
+    ("Tax Default", "Tax default on record — ask whether back taxes are current now; a resolved-but-recent default often means a payment plan, POA, or an elderly owner with a caretaker. Don't assume it's fixed for good — repeat delinquency is common."),
+    ("Inherited", _INHERITED_OPENER),
+    ("Tired Landlord", "Tired-landlord signal — lead with relief from tenant/maintenance hassle, not price."),
+    ("Vacant", "Property reads vacant — ask directly what it's costing them to maintain/insure an empty house."),
+]
+
+
+def call_script(lead: Lead) -> list[str]:
+    """Per-lead call-prep talking points generated from this lead's own
+    attributes (distress_flags, motivation_signal, condition_tier, DNC/TCPA
+    flags) — not a static script. Always built around Price / Condition /
+    Motivation / Time (PCMT): get those four answers and the call is done,
+    regardless of exact wording. Never anchor with our own number first —
+    ask the seller what they need to walk away with. A seller with nowhere
+    to go after closing isn't a workable deal yet, no matter the margin —
+    that's a hang-up-the-phone disqualifier, not just a note.
+    """
+    opener = "General absentee-owner opener — no specific distress signal on file; keep it open-ended."
+    for signal_key, angle in _OPENER_BY_SIGNAL:
+        if signal_key in lead.distress_flags:
+            opener = angle
+            break
+    else:
+        if "Non-sale transfer" in lead.motivation_signal:
+            opener = _INHERITED_OPENER
+
+    lines = [
+        f"Opener: {opener}",
+        "Price: Ask what number they have in mind / what they need to walk away with — never state our number first.",
+        f"Condition: Confirm condition matches our {lead.condition_tier} read; ask what repairs they know about.",
+        "Motivation: Ask directly why they're selling now — ties back to the opener above.",
+        "Time: Ask how soon they need to close or move, then stress-test it — \"if we could close as soon as tomorrow, would that work?\"",
+        "Dealbreaker check: Confirm they have somewhere to go after closing — no exit plan means this isn't a workable deal yet.",
+    ]
+    if lead.do_not_call or lead.tcpa_risk:
+        lines.append("Compliance: DNC/TCPA flagged on this number — call only, do not text.")
+    else:
+        lines.append("Compliance: No consent on file for texting — call first; only text once they've consented.")
+    return lines
+
+
 @dataclass
 class Lead:
     acctid: str
@@ -360,6 +419,7 @@ def build_digest_body(leads: list[Lead]) -> str:
             else ""
         )
         priority_prefix = "[HIGH PRIORITY] " if lead.high_priority else ""
+        script_lines = "".join(f"    - {line}\n" for line in call_script(lead))
         body_lines.append(
             f"{priority_prefix}{lead.address}\n"
             f"  Owner: {lead.owner_name} | Phone: {lead.phone or 'n/a'}{dnc_note}{tcpa_note} | "
@@ -374,6 +434,8 @@ def build_digest_body(leads: list[Lead]) -> str:
             f"{mao_line}"
             f"{payoff_line}"
             f"  Zillow: {lead.zillow_link}\n"
+            f"  Call prep (Price / Condition / Motivation / Time):\n"
+            f"{script_lines}"
         )
     return "\n".join(body_lines)
 
