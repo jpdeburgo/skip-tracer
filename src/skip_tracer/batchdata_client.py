@@ -163,3 +163,20 @@ def flag_low_margin(assessed_value: float, arv_estimate: float) -> bool:
     """If the county's own assessment already meets/exceeds ARV, there's
     no room for a flip."""
     return assessed_value >= arv_estimate
+
+
+def payoff_profit_estimate(
+    arv_estimate: float, total_lien_balance: float, repair_cost: float
+) -> float:
+    """Profit potential if the offer is just enough to cover the owner's
+    existing lien balance — a distressed seller's real floor (what they
+    need to avoid a deficiency at foreclosure), not an abstract flip
+    margin. Positive means there's room to profit even without any
+    below-market discount from the owner, which is a stronger signal for
+    this pipeline's purpose than the 70%-rule MAO alone.
+
+    Ignores closing/holding/resale costs that max_allowable_offer()'s 0.70
+    factor already bakes in — treat this as a prioritization signal, not a
+    number to actually offer.
+    """
+    return arv_estimate - total_lien_balance - repair_cost
