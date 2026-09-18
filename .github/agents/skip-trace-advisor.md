@@ -203,6 +203,39 @@ Typical paginated/search response shape:
 
 Full reference: <https://developer.batchdata.com/>.
 
+## Lead scoring and the property catalog
+
+Paid `property/search` results are persisted to a Render Postgres database
+(`src/skip_tracer/database.py`) so a paid call is made once and queried
+forever. `src/skip_tracer/lead_scoring.py` turns that catalog into a ranked
+call list. See the README's "Property catalog" and "Lead scoring" sections
+for the schema and the full rationale.
+
+When advising on prioritization, hold these lines:
+
+- **Never rank by profit alone.** Profit is what a deal is worth *if* it
+  closes; motivation decides whether it closes at all. A $1.2M-equity owner
+  with no urgency lists retail — they are not a wholesale lead. Motivation
+  carries the largest weight (0.50) for exactly this reason.
+- **`activeListing`/`pendingListing` disqualify; `failedListing`/
+  `expiredListing` are strong positives.** The difference is the broker
+  contract, not the intent to sell.
+- **Involuntary liens (tax liens, judgments, mechanic's liens) are NOT in
+  `totalOpenLienBalance`.** They sit in `involuntaryLien.liens[]` and still
+  have to be cleared at closing. Omitting them overstates the spread on
+  precisely the distressed properties this tool targets.
+- **`preforeclosure` is the umbrella flag.** Across the catalog, every
+  `noticeOfSale`, `noticeOfLisPendens`, `noticeOfDefault`, `activeAuction`
+  and `taxDefault` property also carried `preforeclosure`, so a single
+  `["preforeclosure"]` search captures all of them. Caveat: that sample was
+  itself filtered on `preforeclosure`, so a tax-delinquent property with no
+  foreclosure filing could still be missed. Treat as a strong heuristic, not
+  a proven identity.
+- **The weights are a hypothesis, not a fitted model.** Say so plainly when
+  asked. `scripts/manage_leads.py stats` is the feedback loop that would
+  make them empirical; until there's a real funnel, don't present the
+  rankings as validated.
+
 ## Leverage framing
 
 A property sitting 5+ months on market typically can't pass a lender's
